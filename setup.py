@@ -1,8 +1,9 @@
 from setuptools import setup
 
-APP = ['happymac.py']
+APP = ['src/happymac.py']
 DATA_FILES = [
-    'burn.png', 'frown.png', 'happy.png', 'nauseated.png', 'ok.png', 'sweating.png', 'unhappy.png'
+    'icons',
+    'icons/burn.png', 'icons/frown.png', 'icons/happy.png', 'icons/nauseated.png', 'icons/ok.png', 'icons/sweating.png', 'icons/unhappy.png'
 ]
 PY2APP_OPTIONS = {
     'argv_emulation': True,

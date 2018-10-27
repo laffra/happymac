@@ -1,4 +1,5 @@
 import functools
+import os
 import preferences
 import process
 import rumps
@@ -6,7 +7,7 @@ import time
 import utils
 import webbrowser
 
-ICONS = [ "happy.png", "frown.png", "sweating.png", "burn.png" ]
+ICONS = [ "icons/happy.png", "icons/frown.png", "icons/sweating.png", "icons/burn.png" ]
 
 TITLE_QUIT = "Quit HappyMac"
 TITLE_ACTIVITY_MONITOR = "Open Activity Monitor"

@@ -1,7 +1,12 @@
 import os
 import shelve
+import sys
 
-shelf = shelve.open(os.path.join(os.path.expanduser("~"), ".happymac"))
+try:
+  shelf = shelve.open(os.path.join(os.path.expanduser("~"), ".happymac"))
+except:
+  print("Happymac is already running.")
+  sys.exit(1)
 
 def get(key, default=None):
     return shelf.get(key, default)

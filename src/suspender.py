@@ -2,7 +2,7 @@ from collections import defaultdict
 import process
 
 VERBOSE = False
-RESOURCE_HOG_COUNT = 5
+RESOURCE_HOG_COUNT = 3
 BACKGROUND_PROCESS_MAX_CPU = 0.35
 busy_count = defaultdict(int)
 

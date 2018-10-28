@@ -68,7 +68,7 @@ class HappyMacStatusBarApp(rumps.App):
     def menu_item_for_process(self, p, resumable=False, suspendable=False):
         name = p.name()
         cpu = process.cpu(p.pid)
-        percent = max(1, int(100 * cpu))
+        percent = 0 if resumable else max(1, int(100 * cpu))
         if p.pid != utils.currentAppPid() and not resumable and percent < IDLE_PROCESS_PERCENT_CPU:
             return None
         item = rumps.MenuItem("%s - %d%%" % (name, percent))

@@ -51,10 +51,10 @@ class HappyMacStatusBarApp(rumps.App):
         process.terminate(pid)
 
     def resume(self, menuItem, pid):
-        suspender.resume(pid)
+        suspender.resume(pid, manual=True)
 
     def suspend(self, menuItem, pid):
-        suspender.suspend(pid)
+        suspender.suspend(pid, manual=True)
 
     def google(self, menuItem, pid):
         webbrowser.open("https://google.com/?q=Mac process '%s'" % process.name(pid))
@@ -68,7 +68,7 @@ class HappyMacStatusBarApp(rumps.App):
     def menu_item_for_process(self, p, resumable=False, suspendable=False):
         name = p.name()
         cpu = process.cpu(p.pid)
-        percent = 0 if resumable else max(1, int(100 * cpu))
+        percent = max(0 if resumable else 1, int(100 * cpu))
         if p.pid != utils.currentAppPid() and not resumable and percent < IDLE_PROCESS_PERCENT_CPU:
             return None
         item = rumps.MenuItem("%s - %d%%" % (name, percent))
@@ -110,6 +110,8 @@ class HappyMacStatusBarApp(rumps.App):
         ]
 
     def update_menu(self, foreground_tasks, background_tasks, suspended_tasks):
+        if self.menu_is_highlighted():
+            return
         title = utils.currentAppShortName()
         foreground_menu_items = filter(None, map(self.menu_item_for_process, foreground_tasks))
         background_menu_items = filter(None, map(functools.partial(self.menu_item_for_process, suspendable=True), background_tasks))
@@ -137,6 +139,9 @@ class HappyMacStatusBarApp(rumps.App):
             suspender.manage(foreground_tasks, background_tasks)
         except Exception as e:
             print "update: %s" % e
+
+    def menu_is_highlighted(self):
+        return self.menu._menu.highlightedItem() != None
 
     def quit(self, menuItem):
         rumps.quit_application()

@@ -11,6 +11,7 @@ processes = {}
 
 def clear_cpu_cache():
     cpu_cache.clear()
+    processes.clear()
 
 def cpu(pid=-1):
     if pid != -1 and pid in cpu_cache:
@@ -109,7 +110,6 @@ def suspend(pid):
         pass
     except Exception as e:
         print "Error in suspend: %s" % e
-        return False
 
 def resume(pid):
     try:
@@ -119,4 +119,3 @@ def resume(pid):
         pass
     except Exception as e:
         print "Error in resume: %s" % e
-        return False

@@ -33,4 +33,7 @@ class Timer(threading.Thread):
     def run(self):
         while True:
             time.sleep(self.interval)
-            self.callback()
+            try:
+                self.callback()
+            except Exception as e:
+                print "Error in %s: %s" % (self, e)

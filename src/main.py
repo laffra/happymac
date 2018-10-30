@@ -44,9 +44,11 @@ class HappyMacStatusBarApp(rumps.App):
 
     def show_emoji(self, menuItem):
         preferences.set(KEY_ICON_DETAILS, TITLE_JUST_EMOJI)
+        self.update(True)
 
     def show_emoji_and_name(self, menuItem):
         preferences.set(KEY_ICON_DETAILS, TITLE_EMOJI_AND_NAME)
+        self.update(True)
 
     def terminate(self, menuItem, pid):
         process.terminate(pid)

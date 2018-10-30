@@ -155,7 +155,7 @@ class HappyMacStatusBarApp(rumps.App):
         return ICONS[iconIndex]
 
     def about(self, menuItem):
-        webbrowser.open("http://chrislaffra.com/happymac")
+        webbrowser.open("http://happymac.app")
 
 
 def main():

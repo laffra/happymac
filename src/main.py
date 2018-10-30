@@ -1,4 +1,5 @@
 import functools
+import install
 import os
 import preferences
 import process
@@ -67,11 +68,8 @@ class HappyMacStatusBarApp(rumps.App):
         self.handle_action()
 
     def activity_monitor(self, menuItem):
-        self.apple_script('''tell application "Activity Monitor" to activate''')
+        utils.run_osa_script('''tell application "Activity Monitor" to activate''')
         self.handle_action()
-
-    def apple_script(self, script):
-        os.system("osascript -e '%s'" % script)
 
     def menu_item_for_process(self, p, resumable=False, suspendable=False):
         name = p.name()

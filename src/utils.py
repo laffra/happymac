@@ -1,6 +1,7 @@
 import AppKit
 import Quartz
 from functools import wraps
+import os
 import process
 import time
 import threading
@@ -23,6 +24,9 @@ def window_name(pid):
         if window.get('kCGWindowOwnerPID') == pid and window.get('kCGWindowName'):
             return window.get('kCGWindowName')
     return process.name(pid)
+
+def run_osa_script(script):
+    os.system("osascript -e '%s'" % script)
 
 class Timer(threading.Thread):
     def __init__(self, interval, callback):

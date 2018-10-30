@@ -7,6 +7,7 @@ DATA_FILES = [
 ]
 PY2APP_OPTIONS = {
     'argv_emulation': True,
+    'iconfile': 'icons/app.icns',
     'plist': {
         'LSUIElement': True,
     },

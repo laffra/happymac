@@ -44,31 +44,31 @@ class HappyMacStatusBarApp(rumps.App):
 
     def show_emoji(self, menuItem):
         preferences.set(KEY_ICON_DETAILS, TITLE_JUST_EMOJI)
-        self.update(True)
+        self.handle_action()
 
     def show_emoji_and_name(self, menuItem):
         preferences.set(KEY_ICON_DETAILS, TITLE_EMOJI_AND_NAME)
-        self.update(True)
+        self.handle_action()
 
     def terminate(self, menuItem, pid):
         process.terminate(pid)
-        self.update(True)
+        self.handle_action()
 
     def resume(self, menuItem, pid):
         suspender.resume(pid, manual=True)
-        self.update(True)
+        self.handle_action()
 
     def suspend(self, menuItem, pid):
         suspender.suspend(pid, manual=True)
-        self.update(True)
+        self.handle_action()
 
     def google(self, menuItem, pid):
         webbrowser.open("https://google.com/search?q=Mac process '%s'" % process.name(pid))
-        self.update(True)
+        self.handle_action()
 
     def activity_monitor(self, menuItem):
         self.apple_script('''tell application "Activity Monitor" to activate''')
-        self.update(True)
+        self.handle_action()
 
     def apple_script(self, script):
         os.system("osascript -e '%s'" % script)
@@ -158,6 +158,9 @@ class HappyMacStatusBarApp(rumps.App):
 
     def about(self, menuItem):
         webbrowser.open("http://happymac.app")
+
+    def handle_action(self):
+        self.update(True)
 
 
 def main():

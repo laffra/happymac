@@ -90,7 +90,7 @@ def top(exclude, count=5):
             if pid in exclude_pids or pid == my_pid:
                 return None
             return p
-        except psutil.AccessDenied:
+        except:
             return None
 
     processes = filter(None, (create_process(pid) for pid in psutil.pids()))

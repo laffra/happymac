@@ -4,6 +4,7 @@ import preferences
 import process
 import rumps
 import suspender
+import sys
 import time
 import utils
 import webbrowser
@@ -49,18 +50,23 @@ class HappyMacStatusBarApp(rumps.App):
 
     def terminate(self, menuItem, pid):
         process.terminate(pid)
+        self.update(True)
 
     def resume(self, menuItem, pid):
         suspender.resume(pid, manual=True)
+        self.update(True)
 
     def suspend(self, menuItem, pid):
         suspender.suspend(pid, manual=True)
+        self.update(True)
 
     def google(self, menuItem, pid):
-        webbrowser.open("https://google.com/?q=Mac process '%s'" % process.name(pid))
+        webbrowser.open("https://google.com/search?q=Mac process '%s'" % process.name(pid))
+        self.update(True)
 
     def activity_monitor(self, menuItem):
         self.apple_script('''tell application "Activity Monitor" to activate''')
+        self.update(True)
 
     def apple_script(self, script):
         os.system("osascript -e '%s'" % script)
@@ -109,8 +115,8 @@ class HappyMacStatusBarApp(rumps.App):
             rumps.MenuItem(TITLE_QUIT, callback=self.quit),
         ]
 
-    def update_menu(self, foreground_tasks, background_tasks, suspended_tasks):
-        if self.menu_is_highlighted():
+    def update_menu(self, foreground_tasks, background_tasks, suspended_tasks, force_update=False):
+        if self.menu_is_highlighted() and not force_update:
             return
         title = utils.currentAppShortName()
         foreground_menu_items = filter(None, map(self.menu_item_for_process, foreground_tasks))
@@ -130,21 +136,19 @@ class HappyMacStatusBarApp(rumps.App):
         for item in suspended_menu_items:
             self.menu.insert_after(TITLE_SUSPENDED_PROCESSES, item)
 
-    def update(self):
-        try:
-            process.clear_cpu_cache()
-            foreground_tasks = process.family(utils.currentAppPid())
-            background_tasks = process.top(exclude=foreground_tasks)
-            self.update_menu(foreground_tasks, background_tasks, suspender.get_suspended_tasks())
-            suspender.manage(foreground_tasks, background_tasks)
-        except Exception as e:
-            print "update: %s" % e
+    def update(self, force_update=False):
+        process.clear_cpu_cache()
+        foreground_tasks = process.family(utils.currentAppPid())
+        background_tasks = process.top(exclude=foreground_tasks)
+        self.update_menu(foreground_tasks, background_tasks, suspender.get_suspended_tasks(), force_update)
+        suspender.manage(foreground_tasks, background_tasks)
 
     def menu_is_highlighted(self):
         return self.menu._menu.highlightedItem() != None
 
     def quit(self, menuItem):
-        rumps.quit_application()
+        suspender.exit()
+        rumps.quit_application();
 
     def getIcon(self, percent):
         iconIndex = 0 if not percent else max(0, min(len(ICONS) - 1, int(percent * len(ICONS) / 100.0)))

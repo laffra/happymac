@@ -50,3 +50,7 @@ def increase_resource_hog_count(pid):
 def get_suspended_tasks():
     if VERBOSE: print "Suspender: suspended tasks %s" % suspended_tasks
     return [process.process(pid) for pid in suspended_tasks]
+
+def exit():
+    for pid in suspended_tasks:
+        process.resume(pid)

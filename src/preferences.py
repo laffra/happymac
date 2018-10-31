@@ -5,21 +5,20 @@ try:
 except ImportError:
     import pickle as pickle
 
-path = os.path.join(os.path.expanduser("~"), "happymac.preferences")
-prefs = {}
+home_dir = os.path.join(os.path.expanduser("~"), "HappyMacApp")
+preferences_path = os.path.join(home_dir, "preferences")
+preferences = {}
 
-try:
-    if os.path.exists(path):
-        with open(path, "rb") as file:
-            prefs = pickle.load(file)
-except Exception as e:
-    print "Cannot load preferences. Is Happymac is already running? %s" % e
-    sys.exit(1)
+if not os.path.exists(home_dir):
+    os.makedirs(home_dir)
+if os.path.exists(preferences_path):
+    with open(preferences_path, "rb") as file:
+        preferences = pickle.load(file)
 
 def get(key, default=None):
-    return prefs.get(key, default)
+    return preferences.get(key, default)
 
 def set(key, value):
-    prefs[key] = value
-    with open(path, "wb") as file:
-         pickle.dump(prefs, file, 2)
+    preferences[key] = value
+    with open(preferences_path, "wb") as file:
+         pickle.dump(preferences, file, 2)

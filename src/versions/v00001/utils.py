@@ -7,6 +7,7 @@ import time
 import threading
 
 def currentApp():
+    #pylint: disable=E1101
     return AppKit.NSWorkspace.sharedWorkspace().activeApplication()
 
 def currentAppName():
@@ -20,6 +21,7 @@ def currentAppPid():
     return currentApp()["NSApplicationProcessIdentifier"]
 
 def window_name(pid):
+    #pylint: disable=E1101
     for window in Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListOptionAll, Quartz.kCGNullWindowID):
         if window.get('kCGWindowOwnerPID') == pid and window.get('kCGWindowName'):
             return window.get('kCGWindowName')

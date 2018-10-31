@@ -10,7 +10,4 @@ if os.path.exists(APP_LOCATION):
     if preferences.get(LAUNCH_AT_LOGIN_KEY):
         preferences.set(LAUNCH_AT_LOGIN_KEY, "true")
         utils.run_osa_script(SETUP_SCRIPT)
-        print "Enable launch at login"
-    else:
-        print "Launch at login already enabled"
 

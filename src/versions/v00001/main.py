@@ -8,21 +8,26 @@ import suspender
 import sys
 import time
 import utils
+import version_manager
 import webbrowser
 
 ICONS = [ "icons/happy.png", "icons/frown.png", "icons/sweating.png", "icons/burn.png" ]
 
 TITLE_QUIT = "Quit HappyMac"
 TITLE_ACTIVITY_MONITOR = "Open Activity Monitor"
-TITLE_ABOUT = "About HappyMac"
+TITLE_ABOUT = "About HappyMac - %s"
 TITLE_CURRENT_PROCESSES = "Current App Tasks"
 TITLE_OTHER_PROCESSES = "Background Tasks:"
 TITLE_SUSPENDED_PROCESSES = "Suspended Background Tasks:"
 
 TITLE_TERMINATE = "Terminate"
-TITLE_RESUME = "Resume"
-TITLE_SUSPEND = "Suspend"
+TITLE_RESUME = "Resume Now"
+TITLE_RESUME_AND_NEVER_SUSPEND = "Never Suspend"
+TITLE_SUSPEND = "Suspend Now"
+TITLE_AUTO_SUSPEND = "Auto Suspend"
 TITLE_GOOGLE = "Google this..."
+TITLE_RESTART = "Restart"
+TITLE_VERSIONS = "Versions"
 
 TITLE_PREFERENCES = "Preferences"
 TITLE_STATUS_BAR = "Status Bar"
@@ -55,12 +60,12 @@ class HappyMacStatusBarApp(rumps.App):
         process.terminate(pid)
         self.handle_action()
 
-    def resume(self, menuItem, pid):
-        suspender.resume(pid, manual=True)
+    def resume(self, menuItem, pid, auto=False):
+        suspender.resume(pid, manual=True, auto=auto)
         self.handle_action()
 
-    def suspend(self, menuItem, pid):
-        suspender.suspend(pid, manual=True)
+    def suspend(self, menuItem, pid, auto=False):
+        suspender.suspend(pid, manual=True, auto=auto)
         self.handle_action()
 
     def google(self, menuItem, pid):
@@ -68,8 +73,11 @@ class HappyMacStatusBarApp(rumps.App):
         self.handle_action()
 
     def activity_monitor(self, menuItem):
-        utils.run_osa_script('''tell application "Activity Monitor" to activate''')
+        utils.run_osa_script('tell application "Activity Monitor" to activate')
         self.handle_action()
+
+    def version(self):
+        return os.path.basename(os.path.dirname(__file__))
 
     def menu_item_for_process(self, p, resumable=False, suspendable=False):
         name = p.name()
@@ -83,9 +91,12 @@ class HappyMacStatusBarApp(rumps.App):
         item.pid = p.pid
         item.add(rumps.MenuItem(TITLE_GOOGLE, callback=functools.partial(self.google, pid=p.pid)))
         if suspendable:
-            item.add(rumps.MenuItem(TITLE_SUSPEND, callback=functools.partial(self.suspend, pid=p.pid)))
+            item.add(rumps.MenuItem(TITLE_AUTO_SUSPEND, callback=functools.partial(self.suspend, auto=True, pid=p.pid)))
         if resumable:
             item.add(rumps.MenuItem(TITLE_RESUME, callback=functools.partial(self.resume, pid=p.pid)))
+            item.add(rumps.MenuItem(TITLE_RESUME_AND_NEVER_SUSPEND, callback=functools.partial(self.resume, auto=True, pid=p.pid)))
+        else:
+            item.add(rumps.MenuItem(TITLE_SUSPEND, callback=functools.partial(self.suspend, pid=p.pid)))
         item.add(rumps.MenuItem(TITLE_TERMINATE, callback=functools.partial(self.terminate, pid=p.pid)))
         return item
 
@@ -95,13 +106,16 @@ class HappyMacStatusBarApp(rumps.App):
         self.title = title if preferences.get('icon_details') == TITLE_EMOJI_AND_NAME else ""
         self.last_title = title
         self.menu = [
-            rumps.MenuItem(TITLE_ABOUT, callback=self.about),
+            rumps.MenuItem(TITLE_ABOUT % self.version(), callback=self.about),
             None,
             {TITLE_PREFERENCES:
-                {TITLE_STATUS_BAR: [
-                    rumps.MenuItem(TITLE_JUST_EMOJI, callback=self.show_emoji),
-                    rumps.MenuItem(TITLE_EMOJI_AND_NAME, callback=self.show_emoji_and_name),
-                ]},
+                {
+                    TITLE_STATUS_BAR: [
+                        rumps.MenuItem(TITLE_JUST_EMOJI, callback=self.show_emoji),
+                        rumps.MenuItem(TITLE_EMOJI_AND_NAME, callback=self.show_emoji_and_name),
+                    ],
+                    TITLE_VERSIONS: self.versions()
+                }
             },
             None,
             rumps.MenuItem(TITLE_CURRENT_PROCESSES),
@@ -111,6 +125,7 @@ class HappyMacStatusBarApp(rumps.App):
             rumps.MenuItem(TITLE_SUSPENDED_PROCESSES),
             None,
             rumps.MenuItem(TITLE_ACTIVITY_MONITOR, callback=self.activity_monitor),
+            rumps.MenuItem(TITLE_RESTART, callback=self.restart),
             None,
             rumps.MenuItem(TITLE_QUIT, callback=self.quit),
         ]
@@ -147,6 +162,27 @@ class HappyMacStatusBarApp(rumps.App):
         return self.menu._menu.highlightedItem() != None
 
     def quit(self, menuItem):
+        suspender.exit()
+        rumps.quit_application();
+
+    def versions(self):
+        return [
+            rumps.MenuItem(version, callback=functools.partial(self.switch_version, version=version))
+            for version in version_manager.get_versions()
+        ]
+
+    def switch_version(self, menuItem, version):
+        try:
+            version_manager.set_version(version)
+            self.restart()
+        except Exception as e:
+            print e
+
+    def restart(self, menuItem=None):
+        utils.run_osa_script("""
+            delay 1
+            tell application "happymac" to activate
+        """)
         suspender.exit()
         rumps.quit_application();
 

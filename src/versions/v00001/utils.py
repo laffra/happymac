@@ -26,7 +26,7 @@ def window_name(pid):
     return process.name(pid)
 
 def run_osa_script(script):
-    os.system("osascript -e '%s'" % script)
+    os.system("osascript -e '%s' &" % script)
 
 class Timer(threading.Thread):
     def __init__(self, interval, callback):

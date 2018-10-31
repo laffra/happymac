@@ -1,3 +1,3 @@
-import main
+import version_manager
 
-main.main()
+version_manager.main()

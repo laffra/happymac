@@ -50,6 +50,9 @@ def nice(pid, value=None):
 def cmdline(pid):
     return process(pid).cmdline()
 
+def location(pid):
+    return process(pid).cmdline()[0]
+
 def process_time(pid):
     times = process(pid).cpu_times() if pid != -1 else psutil.cpu_times()
     return times.user + times.system + getattr(times, "children_user", 0) + getattr(times, "children_system", 0)

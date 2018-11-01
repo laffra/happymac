@@ -1,6 +1,7 @@
 #pylint: disable=E0401
 
 import error
+import log
 import os
 import glob
 import inspect
@@ -78,7 +79,7 @@ def download_latest():
         reload(downloads)
         rumps.notification("HappyMac Update", "A new version was downloaded", "See: Preferences > Versions", sound=True)
     except Exception as e:
-        print "Cannot download latest: %s" % e
+        log.log("Cannot download latest: %s" % e)
 
 def set_version(version):
     preferences.set("version", None if version == last_version else version)

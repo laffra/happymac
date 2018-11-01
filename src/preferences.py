@@ -1,3 +1,4 @@
+import log
 import os
 import sys
 try:
@@ -22,3 +23,4 @@ def set(key, value):
     preferences[key] = value
     with open(preferences_path, "wb") as file:
          pickle.dump(preferences, file, 2)
+    log.log("Set preference %s to %s" % (key, repr(value)))

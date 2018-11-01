@@ -1,8 +1,8 @@
 import AppKit
-import Quartz
-from functools import wraps
+import log
 import os
 import process
+import Quartz
 import time
 import threading
 
@@ -42,4 +42,4 @@ class Timer(threading.Thread):
             try:
                 self.callback()
             except Exception as e:
-                print "Error in %s: %s" % (self, e)
+                log.log("Error in %s" % self, e)

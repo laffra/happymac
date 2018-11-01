@@ -1,5 +1,6 @@
 import functools
 import install
+import log
 import os
 import preferences
 import process
@@ -46,13 +47,15 @@ class HappyMacStatusBarApp(rumps.App):
         self.last_title = ""
         self.menu = []
         self.create_menu()
+        self.start = time.time()
         utils.Timer(2, self.update).start()
+        log.log("Started HappyMac")
 
-    def show_emoji(self, menuItem):
+    def show_emoji(self, menuItem=None):
         preferences.set(KEY_ICON_DETAILS, TITLE_JUST_EMOJI)
         self.handle_action()
 
-    def show_emoji_and_name(self, menuItem):
+    def show_emoji_and_name(self, menuItem=None):
         preferences.set(KEY_ICON_DETAILS, TITLE_EMOJI_AND_NAME)
         self.handle_action()
 
@@ -70,10 +73,12 @@ class HappyMacStatusBarApp(rumps.App):
 
     def google(self, menuItem, pid):
         webbrowser.open("https://google.com/search?q=Mac process '%s'" % process.name(pid))
+        log.log("Google %s" % process.name(pid))
         self.handle_action()
 
-    def activity_monitor(self, menuItem):
+    def activity_monitor(self, menuItem=None):
         utils.run_osa_script('tell application "Activity Monitor" to activate')
+        log.log("Launch Activity Monitor")
         self.handle_action()
 
     def version(self):
@@ -161,7 +166,8 @@ class HappyMacStatusBarApp(rumps.App):
     def menu_is_highlighted(self):
         return self.menu._menu.highlightedItem() != None
 
-    def quit(self, menuItem):
+    def quit(self, menuItem=None):
+        log.log("Quit - Ran for %d seconds" % int(time.time() - self.start))
         suspender.exit()
         rumps.quit_application();
 
@@ -173,27 +179,30 @@ class HappyMacStatusBarApp(rumps.App):
 
     def switch_version(self, menuItem, version):
         try:
+            log.log("Switch to version %s" % version)
             version_manager.set_version(version)
             self.restart()
         except Exception as e:
-            print e
+            log.log("Cannot switch to version %s" % version, e)
 
     def restart(self, menuItem=None):
+        log.log("Restart");
         utils.run_osa_script("""
             delay 1
             tell application "happymac" to activate
         """)
-        suspender.exit()
-        rumps.quit_application();
+        self.quit()
 
     def getIcon(self, percent):
         iconIndex = 0 if not percent else max(0, min(len(ICONS) - 1, int(percent * len(ICONS) / 100.0)))
         return ICONS[iconIndex]
 
-    def about(self, menuItem):
+    def about(self, menuItem=None):
         webbrowser.open("http://happymac.app")
 
-    def handle_action(self):
+    def handle_action(self, menuItem=None):
+        if menuItem:
+            log.log("Handled menu item %s" % menuItem)
         self.update(True)
 
 

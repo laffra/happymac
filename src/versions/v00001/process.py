@@ -1,10 +1,9 @@
-import utils
-
+import log
 import os
 import psutil
 import time
+import utils
 
-VERBOSE = False
 total_times = {}
 cpu_cache = {}
 processes = {}
@@ -29,13 +28,12 @@ def cpu(pid=-1):
     except (psutil.AccessDenied, psutil.NoSuchProcess, psutil.ZombieProcess):
         return 0
     except Exception as e:
-        print "Error in cpu: %s" % e
+        log.log("Unhandled Error in process.cpu", e)
         return 0
 
 def process(pid):
     if not pid in processes:
         processes[pid] = psutil.Process(pid)
-        if VERBOSE: print("add process %d %s" % (pid, processes[pid]))
     return processes[pid]
 
 def name(pid):
@@ -103,7 +101,7 @@ def terminate(pid):
     try:
         process(pid).terminate()
     except Exception as e:
-        print "Error in terminate: %s" % e
+        log.log("Unhandled Error in process.terminate", e)
 
 def suspend(pid):
     try:
@@ -112,7 +110,7 @@ def suspend(pid):
     except psutil.AccessDenied:
         pass
     except Exception as e:
-        print "Error in suspend: %s" % e
+        log.log("Unhandled Error in process.suspend", e)
 
 def resume(pid):
     try:
@@ -121,4 +119,4 @@ def resume(pid):
     except psutil.AccessDenied:
         pass
     except Exception as e:
-        print "Error in resume: %s" % e
+        log.log("Unhandled Error in process.resume", e)

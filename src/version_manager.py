@@ -52,14 +52,16 @@ def find_version(version):
 
 def download_latest():
     try:
+        log.log("Downloading the latest version")
         latest = json.loads(urllib2.urlopen('https://happymac.app/_functions/latest').read())
         file_separator = "#@#@#@#@#"
         line_separator = "@@@"
         version = latest["version"]
         new_dir = os.path.join(downloads_dir, version)
         if os.path.exists(new_dir):
-            # this version was already downloaded
+            log.log("Already on the latest version %s" % version)
             return
+        log.log("Extracting version %s to %s" % (version, new_dir))
         if not os.path.exists(new_dir):
             os.makedirs(new_dir)
         fout = None
@@ -72,11 +74,13 @@ def download_latest():
                 if fout: fout.write("%s\n" % line)
         if fout: fout.close()
         init_path = os.path.join(downloads_dir, "__init__.py")
+        log.log("Registering version %s in %s" % (version, init_path))
         with open(init_path, "a") as fout:
             fout.write("import %s\n\n" % version)
         global downloads
         import downloads
         reload(downloads)
+        log.log("Successfully downloaded and installed version %s" % version)
         rumps.notification("HappyMac Update", "A new version was downloaded", "See: Preferences > Versions", sound=True)
     except Exception as e:
         log.log("Cannot download latest: %s" % e)
@@ -92,4 +96,4 @@ def get_versions():
     builtin_versions = [version.__name__.split(".")[-1] for version in available_builtin_versions]
     available_downloaded_versions = glob.glob(os.path.join(downloads_dir, "v[0-9]*"))
     downloaded_versions = [version.split(os.path.sep)[-1] for version in available_downloaded_versions]
-    return builtin_versions + downloaded_versions
+    return sorted(builtin_versions + downloaded_versions)

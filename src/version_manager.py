@@ -1,8 +1,12 @@
+#pylint: disable=E0401
+
+import error
 import os
 import glob
 import inspect
 import json
 import preferences
+import rumps
 import sys
 import urllib2
 import versions
@@ -14,8 +18,11 @@ if not os.path.exists(downloads_dir):
 
 sys.path.append(home_dir)
 
-#pylint: disable=E0401
-import downloads
+downloads = None
+try:
+    import downloads
+except:
+    pass
 
 def main():
     download_latest()
@@ -27,21 +34,28 @@ def switch_version(version):
         mod = find_version(version)
     except:
         mod = find_version(last_version())
-    main = getattr(mod, "main")
-    main.main()
+    if mod:
+        main = getattr(mod, "main")
+        rumps.notification("HappyMac", "HappyMac %s is now running" % version, "See the emoji icon in the status bar")
+        main.main()
+    else:
+        error.error("Cannot switch to version %s" % version)
+
 
 def find_version(version):
     try:
         return getattr(versions, version)
     except:
-        return getattr(downloads, version)
+        if downloads:
+            return getattr(downloads, version)
 
 def download_latest():
     try:
         latest = json.loads(urllib2.urlopen('https://happymac.app/_functions/latest').read())
         file_separator = "#@#@#@#@#"
         line_separator = "@@@"
-        new_dir = os.path.join(downloads_dir, latest["version"])
+        version = latest["version"]
+        new_dir = os.path.join(downloads_dir, version)
         if os.path.exists(new_dir):
             # this version was already downloaded
             return
@@ -58,8 +72,11 @@ def download_latest():
         if fout: fout.close()
         init_path = os.path.join(downloads_dir, "__init__.py")
         with open(init_path, "a") as fout:
-            fout.write("import %s\n\n" % latest["version"])
+            fout.write("import %s\n\n" % version)
+        global downloads
+        import downloads
         reload(downloads)
+        rumps.notification("HappyMac Update", "A new version was downloaded", "See: Preferences > Versions", sound=True)
     except Exception as e:
         print "Cannot download latest: %s" % e
 

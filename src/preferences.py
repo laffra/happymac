@@ -1,19 +1,22 @@
 import log
 import os
 import sys
+
 try:
     import cPickle as pickle
 except ImportError:
     import pickle as pickle
 
-home_dir = os.path.join(os.path.expanduser("~"), "HappyMacApp")
-preferences_path = os.path.join(home_dir, "happymac.prefs")
+def get_preferences_path():
+    home_dir = os.path.join(os.path.expanduser("~"), "HappyMacApp")
+    if not os.path.exists(home_dir):
+        os.makedirs(home_dir)
+    return os.path.join(home_dir, "happymac.prefs")
+
 preferences = {}
 
-if not os.path.exists(home_dir):
-    os.makedirs(home_dir)
-if os.path.exists(preferences_path):
-    with open(preferences_path, "rb") as file:
+if os.path.exists(get_preferences_path()):
+    with open(get_preferences_path(), "rb") as file:
         preferences = pickle.load(file)
 
 def get(key, default=None):
@@ -21,6 +24,6 @@ def get(key, default=None):
 
 def set(key, value):
     preferences[key] = value
-    with open(preferences_path, "wb") as file:
+    with open(get_preferences_path(), "wb") as file:
          pickle.dump(preferences, file, 2)
     log.log("Set preference %s to %s" % (key, repr(value)))

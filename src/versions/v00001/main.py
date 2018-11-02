@@ -41,10 +41,11 @@ LAUNCHD_PID = 1
 IDLE_PROCESS_PERCENT_CPU = 3
 
 class HappyMacStatusBarApp(rumps.App):
-    def __init__(self):
+    def __init__(self, quit_callback=None):
         super(HappyMacStatusBarApp, self).__init__("")
         self.quit_button = None
         self.last_title = ""
+        self.quit_callback = quit_callback
         self.menu = []
         self.create_menu()
         self.start = time.time()
@@ -169,7 +170,8 @@ class HappyMacStatusBarApp(rumps.App):
     def quit(self, menuItem=None):
         log.log("Quit - Ran for %d seconds" % int(time.time() - self.start))
         suspender.exit()
-        rumps.quit_application();
+        self.quit_callback()
+        rumps.quit_application()
 
     def versions(self):
         return [
@@ -188,7 +190,7 @@ class HappyMacStatusBarApp(rumps.App):
     def restart(self, menuItem=None):
         log.log("Restart");
         utils.run_osa_script("""
-            delay 1
+            delay 5
             tell application "happymac" to activate
         """)
         self.quit()
@@ -206,5 +208,5 @@ class HappyMacStatusBarApp(rumps.App):
         self.update(True)
 
 
-def main():
-    HappyMacStatusBarApp().run()
+def main(quit_callback=None):
+    HappyMacStatusBarApp(quit_callback).run()

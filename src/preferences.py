@@ -7,7 +7,7 @@ except ImportError:
     import pickle as pickle
 
 home_dir = os.path.join(os.path.expanduser("~"), "HappyMacApp")
-preferences_path = os.path.join(home_dir, "preferences")
+preferences_path = os.path.join(home_dir, "happymac.prefs")
 preferences = {}
 
 if not os.path.exists(home_dir):

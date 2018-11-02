@@ -2,7 +2,13 @@ import datetime
 import os
 
 home_dir = os.path.join(os.path.expanduser("~"), "HappyMacApp")
-log_path = os.path.join(os.path.expanduser("~"), "happymac.log")
+
+try:
+    if not os.path.exists(home_dir):
+        os.makedirs(home_dir)
+    log_path = os.path.join(home_dir, "log.txt")
+except:
+    log_path = os.path.join(os.path.expanduser("~"), "happymac_log.txt")
 
 if not os.path.exists(log_path):
     with open(log_path, "w") as output:

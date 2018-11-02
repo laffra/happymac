@@ -54,6 +54,15 @@ def get_versions():
     except:
         return ""
 
+def get_error_file_path():
+    try:
+        error_dir = os.path.join(os.path.join(home_dir, "errors"))
+        if not os.path.exists(error_dir):
+            os.makedirs(error_dir)
+        path = os.path.join(os.path.join(error_dir, "happymac_error-%s.txt" % datetime.datetime.utcnow()))
+    except:
+        path = os.path.join(os.path.expanduser("~"), "happymac_error.txt")
+    return path
 
 def error(message):
     stack = "HappyMac Execution Stack at Error Time:\n%s\n\n" % "".join(traceback.format_stack()[:-1])
@@ -69,7 +78,7 @@ def error(message):
         stack,
         message
     )
-    path = os.path.join(os.path.expanduser("~"), "happymac.error")
+    path = get_error_file_path()
     with open(path, "w") as output:
         output.write("HappyMac Error Report - %s\n\n" % datetime.datetime.utcnow())
     os.system("system_profiler SPHardwareDataType >> %s" % path)

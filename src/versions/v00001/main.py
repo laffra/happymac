@@ -168,10 +168,12 @@ class HappyMacStatusBarApp(rumps.App):
         return self.menu._menu.highlightedItem() != None
 
     def quit(self, menuItem=None):
-        log.log("Quit - Ran for %d seconds" % int(time.time() - self.start))
-        suspender.exit()
-        self.quit_callback()
-        rumps.quit_application()
+        try:
+            log.log("Quit - Ran for %d seconds" % int(time.time() - self.start))
+            suspender.exit()
+            self.quit_callback()
+        finally:
+            rumps.quit_application()
 
     def versions(self):
         return [

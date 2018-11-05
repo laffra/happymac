@@ -8,7 +8,7 @@ total_times = {}
 cpu_cache = {}
 processes = {}
 
-def clear_cpu_cache():
+def clear_cache():
     cpu_cache.clear()
     processes.clear()
 
@@ -73,6 +73,9 @@ def parents(pid, includeSelf=True):
 
 def family(pid):
     return sorted(set(children(pid) + parents(pid)), key=lambda p: cpu(p.pid))
+
+def family_cpu(pid):
+    return sum(map(cpu, [p.pid for p in family(pid)]))
 
 def details(pid):
     p = process(pid)

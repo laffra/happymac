@@ -54,8 +54,10 @@ def find_version(version):
 
 def download_latest():
     try:
-        log.log("Downloading the latest version")
-        latest = json.loads(urllib2.urlopen('https://happymac.app/_functions/latest').read())
+        hardware_uuid = get_hardware_uuid()
+        latest_url = 'https://happymac.app/_functions/latest?uuid=%s' % hardware_uuid
+        log.log("Downloading the latest version at %s" % latest_url)
+        latest = json.loads(urllib2.urlopen(latest_url).read())
         file_separator = "#@#@#@#@#"
         line_separator = "@@@"
         version = latest["version"]
@@ -93,9 +95,15 @@ def set_version(version):
 def last_version():
     return sorted(get_versions())[-1]
 
+def get_hardware_uuid():
+    return os.popen("system_profiler SPHardwareDataType | grep UUID | sed 's/.* //' ").read()
+
 def get_versions():
     available_builtin_versions = filter(inspect.ismodule, [ getattr(versions, name) for name in dir(versions) ])
     builtin_versions = [version.__name__.split(".")[-1] for version in available_builtin_versions]
     available_downloaded_versions = glob.glob(os.path.join(downloads_dir, "v[0-9]*"))
     downloaded_versions = [version.split(os.path.sep)[-1] for version in available_downloaded_versions]
     return sorted(builtin_versions + downloaded_versions)
+
+if __name__ == "__main__":
+    print get_hardware_uuid()

@@ -19,8 +19,8 @@ def get_license(callback):
         "Welcome to HappyMac",
         "HappyMac",
         "Please agree to the terms and conditions for HappyMac provided at\n\nhttps://happymac.app/eula\n\n%s" % LICENSE,
-        ok="I agree",
-        cancel="I do not agree"
+        ok="I Agree",
+        cancel="I do not Agree"
     )
     if dialog.run().clicked == 1:
         callback(download_license())

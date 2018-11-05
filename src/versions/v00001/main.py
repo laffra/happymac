@@ -196,7 +196,7 @@ class HappyMacStatusBarApp(rumps.App):
     def restart(self, menuItem=None):
         log.log("Restart");
         utils.run_osa_script("""
-            delay 5
+            delay 1
             tell application "happymac" to activate
         """)
         self.quit()

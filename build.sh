@@ -7,7 +7,9 @@ rm -rf build dist
 # run py2app to package a MacOS .app file
 echo
 echo "###### run py2app ###############"
-python3 setup.py py2app
+export PKG_CONFIG_PATH=/usr/local/Cellar/libffi/3.2.1/lib/pkgconfig/:$PKG_CONFIG_PATH
+python setup.py py2app > /dev/null
+rm -rf .eggs
 
 # package up the .app into a MacOS .dmg distributable image
 echo

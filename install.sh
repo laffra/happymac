@@ -12,3 +12,14 @@ pip install py2app
 pip install rumps
 pip install psutil
 brew install gdbm
+
+# Quartz is harder
+pip download quartz
+gunzip quartz-0.0.1.dev0.tar.gz
+tar xvf quartz-0.0.1.dev0.tar
+sed "s/requirements.txt/quartz.egg-info\/requires.txt/" < quartz-0.0.1.dev0/setup.py > quartz-0.0.1.dev0/setup2.py
+mv quartz-0.0.1.dev0/setup2.py quartz-0.0.1.dev0/setup.py
+pip install -e quartz-0.0.1.dev0
+rm -rf quartz-0.0.1.dev0*
+
+rm -rf .eggs

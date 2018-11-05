@@ -15,4 +15,4 @@ with open(output_path, "w") as fout:
         fout.write(open(file).read().replace("\n", "@@@"))
         fout.write("@@@")
 
-os.system("open %s" % output_path)
+os.system(r"/Applications/Visual\ Studio\ Code.app/Contents/Resources/app/bin/code %s" % output_path)

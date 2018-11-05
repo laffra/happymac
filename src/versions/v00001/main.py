@@ -18,6 +18,7 @@ ICONS = [ "icons/happy.png", "icons/frown.png", "icons/sweating.png", "icons/bur
 
 TITLE_QUIT = "Quit HappyMac"
 TITLE_ACTIVITY_MONITOR = "Open Activity Monitor"
+TITLE_REPORT = "Show report..."
 TITLE_ABOUT = "About HappyMac - %s"
 TITLE_CURRENT_PROCESSES = "Current App Tasks"
 TITLE_OTHER_PROCESSES = "Background Tasks:"
@@ -79,6 +80,12 @@ class HappyMacStatusBarApp(rumps.App):
         log.log("Google %s" % process.name(pid))
         self.handle_action()
 
+    def report(self, menuItem=None):
+        try:
+            activity.generate_report()
+        except Exception as e:
+            print e
+
     def activity_monitor(self, menuItem=None):
         utils.run_osa_script('tell application "Activity Monitor" to activate')
         log.log("Launch Activity Monitor")
@@ -133,6 +140,7 @@ class HappyMacStatusBarApp(rumps.App):
             rumps.MenuItem(TITLE_SUSPENDED_PROCESSES),
             None,
             rumps.MenuItem(TITLE_ACTIVITY_MONITOR, callback=self.activity_monitor),
+            rumps.MenuItem(TITLE_REPORT, callback=self.report),
             rumps.MenuItem(TITLE_RESTART, callback=self.restart),
             None,
             rumps.MenuItem(TITLE_QUIT, callback=self.quit),

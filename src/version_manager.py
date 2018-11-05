@@ -7,9 +7,9 @@ import glob
 import inspect
 import json
 import preferences
+import requests
 import rumps
 import sys
-import urllib2
 import versions
 
 home_dir = os.path.join(os.path.expanduser("~"), "HappyMacApp")
@@ -38,7 +38,6 @@ def switch_version(version, quit_callback=None):
         mod = find_version(last_version())
     if mod:
         main = getattr(mod, "main")
-        rumps.notification("HappyMac", "HappyMac %s is now running" % version, "See the emoji icon in the status bar")
         print "vm: main", quit_callback
         main.main(quit_callback)
     else:
@@ -57,7 +56,7 @@ def download_latest():
         hardware_uuid = get_hardware_uuid()
         latest_url = 'https://happymac.app/_functions/latest?uuid=%s' % hardware_uuid
         log.log("Downloading the latest version at %s" % latest_url)
-        latest = json.loads(urllib2.urlopen(latest_url).read())
+        latest = json.loads(requests.get(latest_url).content)
         file_separator = "#@#@#@#@#"
         line_separator = "@@@"
         version = latest["version"]

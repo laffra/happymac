@@ -50,4 +50,4 @@ echo
 echo "###### done ###############"
 echo "Distribution version is in: `pwd`/dist/happymac.dmg"
 echo "Running packaged happymac app now for testing: dist/happymac.app/Contents/MacOS/happymac"
-dist/happymac.app/Contents/MacOS/happymac
+open dist/happymac.dmg

@@ -27,7 +27,6 @@ except:
 
 def main(quit_callback=None):
     download_latest()
-    print "vm", quit_callback
     switch_version(preferences.get("version", last_version()), quit_callback)
 
 def switch_version(version, quit_callback=None):
@@ -38,7 +37,6 @@ def switch_version(version, quit_callback=None):
         mod = find_version(last_version())
     if mod:
         main = getattr(mod, "main")
-        print "vm: main", quit_callback
         main.main(quit_callback)
     else:
         error.error("Cannot switch to version %s" % version)

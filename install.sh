@@ -11,6 +11,7 @@ pip install AppKit
 pip install py2app
 pip install rumps
 pip install psutil
+pip install chardet
 brew install gdbm
 
 # Quartz is harder

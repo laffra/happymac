@@ -1,3 +1,4 @@
+import activity
 import functools
 import install
 import license
@@ -90,7 +91,7 @@ class HappyMacStatusBarApp(rumps.App):
         name = p.name()
         cpu = process.cpu(p.pid)
         percent = max(0 if resumable else 1, int(100 * cpu))
-        if p.pid != utils.currentAppPid() and not resumable and percent < IDLE_PROCESS_PERCENT_CPU:
+        if p.pid != utils.get_current_app_pid() and not resumable and percent < IDLE_PROCESS_PERCENT_CPU:
             return None
         item = rumps.MenuItem("%s - %d%%" % (name, percent))
         item.icon = self.getIcon(percent)
@@ -108,7 +109,7 @@ class HappyMacStatusBarApp(rumps.App):
         return item
 
     def create_menu(self):
-        title = utils.currentAppShortName()
+        title = utils.get_current_app_short_name()
         self.icon = ICONS[0]
         self.title = title if preferences.get('icon_details') == TITLE_EMOJI_AND_NAME else ""
         self.last_title = title
@@ -140,7 +141,7 @@ class HappyMacStatusBarApp(rumps.App):
     def update_menu(self, foreground_tasks, background_tasks, suspended_tasks, force_update=False):
         if self.menu_is_highlighted() and not force_update:
             return
-        title = utils.currentAppShortName()
+        title = utils.get_current_app_short_name()
         foreground_menu_items = filter(None, map(self.menu_item_for_process, foreground_tasks))
         background_menu_items = filter(None, map(functools.partial(self.menu_item_for_process, suspendable=True), background_tasks))
         suspended_menu_items = filter(None, map(functools.partial(self.menu_item_for_process, resumable=True), suspended_tasks))
@@ -159,11 +160,13 @@ class HappyMacStatusBarApp(rumps.App):
             self.menu.insert_after(TITLE_SUSPENDED_PROCESSES, item)
 
     def update(self, force_update=False):
-        process.clear_cpu_cache()
-        foreground_tasks = process.family(utils.currentAppPid())
+        process.clear_cache()
+        utils.clear_cache()
+        foreground_tasks = process.family(utils.get_current_app_pid())
         background_tasks = process.top(exclude=foreground_tasks)
         self.update_menu(foreground_tasks, background_tasks, suspender.get_suspended_tasks(), force_update)
         suspender.manage(foreground_tasks, background_tasks)
+        activity.update()
 
     def menu_is_highlighted(self):
         return self.menu._menu.highlightedItem() != None

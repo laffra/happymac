@@ -1,4 +1,6 @@
 import datetime
+import error
+import log
 import os
 import process
 import sqlite3
@@ -27,7 +29,7 @@ def get_report_path():
     reports_dir = os.path.join(home_dir, "reports")
     if not os.path.exists(reports_dir):
         os.makedirs(reports_dir)
-    return os.path.join(home_dir, "report_%s.html" % datetime.datetime.utcnow())
+    return os.path.join(reports_dir, "report_%s.html" % datetime.datetime.utcnow())
 
 def update():
     pid = utils.get_current_app_pid()
@@ -51,28 +53,31 @@ def get_activities():
     return cursor.fetchall()
 
 def generate_report():
-    filename = get_report_path()
-    with open(filename, "w") as output:
-        output.write("<table border=1>")
-        output.write("<tr><th>When</th><th>CPU</th><th>APP CPU</th><th>APP NAME</th><th>Window/Tab Title</td></tr>")
-        for timestamp, cpu, app_cpu, app_name, window_title in get_activities():
-            output.write("""
-              <tr>
-              <td>%s</td>
-              <td>%d%%</td>
-              <td>%d%%</td>
-              <td>%s</td>
-              <td>%s</td>
-              </tr>
-            """ % (
-                datetime.datetime.fromtimestamp(timestamp),
-                int(cpu * 100),
-                int(app_cpu * 100),
-                app_name.encode('ascii','ignore'),
-                window_title.encode('ascii','ignore'),
-            ))
-        output.write("</table>")
-    webbrowser.open("file://%s" % filename)
-
+    try:
+        filename = get_report_path()
+        log.log("Generate report %s" % filename)
+        with open(filename, "w") as output:
+            output.write("<table border=1>")
+            output.write("<tr><th>When</th><th>CPU</th><th>APP CPU</th><th>APP NAME</th><th>Window/Tab Title</td></tr>")
+            for timestamp, cpu, app_cpu, app_name, window_title in get_activities():
+                output.write("""
+                <tr>
+                <td>%s</td>
+                <td>%d%%</td>
+                <td>%d%%</td>
+                <td>%s</td>
+                <td>%s</td>
+                </tr>
+                """ % (
+                    datetime.datetime.fromtimestamp(timestamp),
+                    int(cpu * 100),
+                    int(app_cpu * 100),
+                    app_name.encode('ascii','ignore'),
+                    window_title.encode('ascii','ignore'),
+                ))
+            output.write("</table>")
+        webbrowser.open("file://%s" % filename)
+    except Exception as e:
+        error.error("Cannot generate report")
 
 sqlite3.connect(get_activity_path()).cursor().execute(INIT_QUERY)

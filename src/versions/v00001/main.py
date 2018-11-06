@@ -81,10 +81,7 @@ class HappyMacStatusBarApp(rumps.App):
         self.handle_action()
 
     def report(self, menuItem=None):
-        try:
-            activity.generate_report()
-        except Exception as e:
-            print e
+        activity.generate_report()
 
     def activity_monitor(self, menuItem=None):
         utils.run_osa_script('tell application "Activity Monitor" to activate')

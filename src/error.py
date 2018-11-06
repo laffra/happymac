@@ -79,13 +79,15 @@ def error(message):
         message
     )
     path = get_error_file_path()
-    with open(path, "w") as output:
-        output.write("HappyMac Error Report - %s\n\n" % datetime.datetime.utcnow())
-    os.system("system_profiler SPHardwareDataType >> %s" % path)
-    with open(path, "a") as output:
-        output.write(error)
-    with open(path) as input:
-        print input.read()
-    print error
+    try:
+        with open(path, "w") as output:
+            output.write("HappyMac Error Report - %s\n\n" % datetime.datetime.utcnow())
+        os.system("system_profiler SPHardwareDataType >> %s" % path)
+        with open(path, "a") as output:
+            output.write(error)
+        with open(path) as input:
+            print input.read()
+    except:
+        pass
     print "For details see: %s" % path
-    rumps.notification("HappyMac", "%s. For details see:" % message, path)
+    rumps.notification("HappyMac", "Error: %s. For details see:" % message, path)

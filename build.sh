@@ -1,4 +1,3 @@
-
 # cleanup
 echo "###### clean up ###############"
 echo "rm -rf build dist"
@@ -22,22 +21,20 @@ echo "###### codesign subcomponents ###############"
 # https://stackoverflow.com/questions/52905940/how-to-codesign-and-enable-the-hardened-runtime-for-a-3rd-party-cli-on-xcode
 
 rm -rf happymac.app/Contents/Frameworks/libgio-2.0.0.dylib
+
 rm -rf happymac.app/Contents/Resources/lib/tcl8.6
 rm -rf happymac.app/Contents/Resources/lib/tk8.6
 rm -rf happymac.app/Contents/Resources/lib/tk8
 
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libffi.6.dylib
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libgio-2.0.0.dylib
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libgirepository-1.0.1.dylib
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libglib-2.0.0.dylib
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libgmodule-2.0.0.dylib
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libgobject-2.0.0.dylib
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libintl.8.dylib
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libpcre.1.dylib
-codesign --force --entitlements ../app.entitlements --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/Python.framework/Versions/2.7/Python
+for filename in $(find happymac.app/ -name "*.dylib"); do
+    codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f $filename
+done
+for filename in $(find happymac.app/ -name "*.so"); do
+    codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f $filename
+done
+codesign --force --entitlements ../app.entitlements --options runtime --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/Python.framework/Versions/2.7/Python
 codesign --force --entitlements ../app.entitlements --options runtime --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/MacOS/python
 codesign --force --entitlements ../app.entitlements --options runtime --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/MacOS/happymac
-# codesign --force --entitlements ../app.entitlements --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libffi.6.dylib
 
 echo "###### create dmg ###############"
 create-dmg happymac.app/

@@ -21,6 +21,11 @@ echo "###### codesign subcomponents ###############"
 # https://forum.xojo.com/49408-10-14-hardened-runtime-and-app-notarization/0
 # https://stackoverflow.com/questions/52905940/how-to-codesign-and-enable-the-hardened-runtime-for-a-3rd-party-cli-on-xcode
 
+rm -rf happymac.app/Contents/Frameworks/libgio-2.0.0.dylib
+rm -rf happymac.app/Contents/Resources/lib/tcl8.6
+rm -rf happymac.app/Contents/Resources/lib/tk8.6
+rm -rf happymac.app/Contents/Resources/lib/tk8
+
 codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libffi.6.dylib
 codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libgio-2.0.0.dylib
 codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libgirepository-1.0.1.dylib
@@ -29,13 +34,10 @@ codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)"
 codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libgobject-2.0.0.dylib
 codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libintl.8.dylib
 codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libpcre.1.dylib
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libtcl8.6.dylib
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libtk8.6.dylib
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libcrypto.1.0.0.dylib
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libssl.1.0.0.dylib
-codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/Python.framework/Versions/2.7/Python
+codesign --force --entitlements ../app.entitlements --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/Python.framework/Versions/2.7/Python
 codesign --force --entitlements ../app.entitlements --options runtime --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/MacOS/python
 codesign --force --entitlements ../app.entitlements --options runtime --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/MacOS/happymac
+# codesign --force --entitlements ../app.entitlements --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libffi.6.dylib
 
 echo "###### create dmg ###############"
 create-dmg happymac.app/
@@ -43,9 +45,6 @@ mv happymac\ 0.0.0.dmg happymac.dmg
 
 echo "###### codesign dmg ###############"
 codesign --force --options runtime --deep --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" happymac.dmg
-
-codesign -v happymac.dmg
-
 
 # create pkg
 hdiutil attach happymac.dmg
@@ -58,5 +57,5 @@ cd ..
 echo
 echo "###### done ###############"
 echo "Distribution version is in: `pwd`/dist/happymac.dmg"
-echo "Running packaged happymac app now for testing: dist/happymac.app/Contents/MacOS/happymac"
-open dist/happymac.dmg
+dist/happymac.app/Contents/MacOS/happymac
+# open dist/happymac.dmg

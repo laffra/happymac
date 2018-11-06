@@ -21,7 +21,16 @@ echo "###### codesign subcomponents ###############"
 # https://forum.xojo.com/49408-10-14-hardened-runtime-and-app-notarization/0
 # https://stackoverflow.com/questions/52905940/how-to-codesign-and-enable-the-hardened-runtime-for-a-3rd-party-cli-on-xcode
 
-# codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libgdbm.6.dylib
+codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libffi.6.dylib
+codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libgio-2.0.0.dylib
+codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libgirepository-1.0.1.dylib
+codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libglib-2.0.0.dylib
+codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libgmodule-2.0.0.dylib
+codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libgobject-2.0.0.dylib
+codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libintl.8.dylib
+codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libpcre.1.dylib
+codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libtcl8.6.dylib
+codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libtk8.6.dylib
 codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libcrypto.1.0.0.dylib
 codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/libssl.1.0.0.dylib
 codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/Python.framework/Versions/2.7/Python

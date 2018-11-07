@@ -10,5 +10,5 @@ xcrun altool --notarize-app -f ../dist/happymac.dmg --primary-bundle-id app.happ
 echo "Upload result:"
 cat request.uuid
 
-echo "Next, wait and run ./status.sh until success is reported"
+echo "Next, wait and run ./check.sh until success is reported"
 

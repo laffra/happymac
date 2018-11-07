@@ -1,5 +1,6 @@
 from setuptools import setup
 
+APP_NAME = "HappyMac"
 APP = ['src/happymac.py']
 DATA_FILES = [
     'icons',
@@ -10,6 +11,13 @@ PY2APP_OPTIONS = {
     'iconfile': 'icons/app.icns',
     'plist': {
         'LSUIElement': True,
+        'CFBundleName': APP_NAME,
+        'CFBundleDisplayName': APP_NAME,
+        'CFBundleGetInfoString': "HappyMac App",
+        'CFBundleIdentifier': "com.chrislaffra.osx.happymac",
+        'CFBundleVersion': "0.1.0",
+        'CFBundleShortVersionString': "0.1.0",
+        'NSHumanReadableCopyright': "Copyright 2018, Chris Laffra, All Rights Reserved"
     },
     'packages': ['rumps', 'Quartz', 'AppKit'],
 }

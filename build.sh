@@ -15,33 +15,37 @@ echo
 echo "###### run create-dmg ###############"
 cd dist
 
+echo "###### fix python to Nov1 version #############"
+hdiutil attach ../happymac-nov-1.dmg
+rm -rf HappyMac.app/Contents/Frameworks/Python.framework
+rm -rf HappyMac.app/Contents/MacOS/python
+cp -r /Volumes/happymac/happymac.app/Contents/Frameworks/Python.framework HappyMac.app/Contents/Frameworks/
+cp -r /Volumes/happymac/happymac.app/Contents/MacOS/python HappyMac.app/Contents/MacOS
+hdiutil detach /Volumes/happymac
+
 echo "###### codesign subcomponents ###############"
 # https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/Procedures/Procedures.html
 # https://forum.xojo.com/49408-10-14-hardened-runtime-and-app-notarization/0
 # https://stackoverflow.com/questions/52905940/how-to-codesign-and-enable-the-hardened-runtime-for-a-3rd-party-cli-on-xcode
 
-rm -rf happymac.app/Contents/Frameworks/libgio-2.0.0.dylib
-
-rm -rf happymac.app/Contents/Resources/lib/tcl8.6
-rm -rf happymac.app/Contents/Resources/lib/tk8.6
-rm -rf happymac.app/Contents/Resources/lib/tk8
-
-for filename in $(find happymac.app/ -name "*.dylib"); do
+for filename in $(find HappyMac.app/ -name "*.dylib"); do
+    echo "Codesign $filename"
     codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f $filename
 done
-for filename in $(find happymac.app/ -name "*.so"); do
+for filename in $(find HappyMac.app/ -name "*.so"); do
+    echo "Codesign $filename"
     codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f $filename
 done
-codesign --force --entitlements ../app.entitlements --options runtime --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/Python.framework/Versions/2.7/Python
-codesign --force --entitlements ../app.entitlements --options runtime --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/MacOS/python
-codesign --force --entitlements ../app.entitlements --options runtime --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/MacOS/happymac
+codesign --force --entitlements ../app.entitlements --options runtime --deep --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f HappyMac.app/Contents/Frameworks/Python.framework/Versions/2.7/Python
+codesign --force --entitlements ../app.entitlements --options runtime --deep --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f HappyMac.app/Contents/MacOS/python
+codesign --force --entitlements ../app.entitlements --options runtime --deep --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f HappyMac.app/Contents/MacOS/happymac
 
 echo "###### create dmg ###############"
 create-dmg happymac.app/
-mv happymac\ 0.0.0.dmg happymac.dmg
+mv happymac\ 0.1.0.dmg happymac.dmg
 
 echo "###### codesign dmg ###############"
-codesign --force --options runtime --deep --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" happymac.dmg
+codesign --force --entitlements ../app.entitlements --options runtime --deep --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" happymac.dmg
 
 # create pkg
 hdiutil attach happymac.dmg

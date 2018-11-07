@@ -1,6 +1,6 @@
 
 echo "Check for status"
-echo -n "############### Enter Apple Password: "
+echo -n "############### Enter Apple HappyMac Password: "
 read -s password
 echo
 

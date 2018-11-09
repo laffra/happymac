@@ -8,7 +8,7 @@ total_times = {}
 cpu_cache = {}
 processes = {}
 
-def clear_cache():
+def clear_process_cache():
     cpu_cache.clear()
     processes.clear()
 
@@ -42,23 +42,14 @@ def name(pid):
 def parent(pid):
     return process(pid).ppid()
 
-def nice(pid, value=None):
-    return process(pid).nice(value)
-
-def cmdline(pid):
-    return process(pid).cmdline()
-
-def location(pid):
-    return process(pid).cmdline()[0]
-
 def process_time(pid):
     times = process(pid).cpu_times() if pid != -1 else psutil.cpu_times()
     return times.user + times.system + getattr(times, "children_user", 0) + getattr(times, "children_system", 0)
 
-def children(pid, includeSelf=True):
+def child_processes(pid, includeSelf=True):
     kids = process(pid).children()
     for grandkid in kids:
-        kids.extend(children(grandkid.pid, False))
+        kids.extend(child_processes(grandkid.pid, False))
     if includeSelf:
         kids.append(process(pid))
     return sorted(set(kids), key=lambda p: cpu(p.pid))
@@ -72,9 +63,9 @@ def parents(pid, includeSelf=True):
     return sorted(set(processes), key=lambda p: cpu(p.pid))
 
 def family(pid):
-    return sorted(set(children(pid) + parents(pid)), key=lambda p: cpu(p.pid))
+    return sorted(set(child_processes(pid) + parents(pid)), key=lambda p: cpu(p.pid))
 
-def family_cpu(pid):
+def family_cpu_usage(pid):
     return sum(map(cpu, [p.pid for p in family(pid)]))
 
 def details(pid):
@@ -100,13 +91,16 @@ def top(exclude, count=5):
     processes = filter(None, (create_process(pid) for pid in psutil.pids()))
     return list(reversed(sorted(processes, key=lambda p: -cpu(p.pid))[:5]))
 
-def terminate(pid):
+def location(pid):
+    return process(pid).cmdline()[0]
+
+def terminate_process(pid):
     try:
         process(pid).terminate()
     except Exception as e:
         log.log("Unhandled Error in process.terminate", e)
 
-def suspend(pid):
+def suspend_pid(pid):
     try:
         process(pid).suspend()
         return True
@@ -115,7 +109,7 @@ def suspend(pid):
     except Exception as e:
         log.log("Unhandled Error in process.suspend", e)
 
-def resume(pid):
+def resume_pid(pid):
     try:
         process(pid).resume()
         return True

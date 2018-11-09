@@ -1,6 +1,7 @@
 #pylint: disable=E0401
 
 import error
+import imp
 import log
 import os
 import glob
@@ -10,7 +11,14 @@ import preferences
 import requests
 import rumps
 import sys
+import StringIO
+import tempfile
 import versions
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle as pickle
 
 home_dir = os.path.join(os.path.expanduser("~"), "HappyMacApp")
 downloads_dir = os.path.join(home_dir, "downloads")
@@ -19,75 +27,76 @@ if not os.path.exists(downloads_dir):
 
 sys.path.append(home_dir)
 
-downloads = None
-try:
-    import downloads
-except:
-    pass
 
 def main(quit_callback=None):
     download_latest()
-    switch_version(preferences.get("version", last_version()), quit_callback)
+    try:
+        load_version(last_version(), quit_callback)
+    except Exception as e:
+        log.log("ERROR: Could not load version due to %s. Loading built-in v00001" % e)
+        load_version("v00001", quit_callback)
 
-def switch_version(version, quit_callback=None):
-    set_version(version)
+def load_version(version, quit_callback=None):
     try:
         mod = find_version(version)
-    except:
+    except Exception as e:
+        log.log("Could not find version %s due to %s" % (version, e))
         mod = find_version(last_version())
     if mod:
-        main = getattr(mod, "main")
-        main.main(quit_callback)
+        main_mod = getattr(mod, "main")
+        log.log("Calling run on %s" % main_mod)
+        main_mod.run(quit_callback)
     else:
-        error.error("Cannot switch to version %s" % version)
-
+        log.log("Cannot load version %s" % version)
 
 def find_version(version):
+    log.log("Find version %s" % version)
+    return getattr(versions, version, find_downloaded_version(version))
+
+def find_downloaded_version(version):
+    version_path = os.path.join(downloads_dir, '%s' % version)
+    if not os.path.exists(version_path):
+        log.log("Downloads: Could not find version %s in %s" % (version, version_path))
+        return None
     try:
-        return getattr(versions, version)
-    except:
-        if downloads:
-            return getattr(downloads, version)
+        with open(version_path, "rb") as file:
+            package = pickle.load(file)
+        mod = load_module_from_source(version, package["contents"])
+        mod.main = mod
+        return mod
+    except Exception as e:
+        error.error("Download: Problem with version %s: %s" % (version, e))
+
+def load_module_from_source(module_name, source):
+    temporary_path = tempfile.mkstemp(".py")[1]
+    with open(temporary_path, "w") as fout:
+        fout.write(source)
+    mod =  imp.load_source(module_name, temporary_path)
+    os.remove(temporary_path)
+    return mod
 
 def download_latest():
     try:
         hardware_uuid = get_hardware_uuid()
-        latest_url = 'https://happymac.app/_functions/latest?uuid=%s' % hardware_uuid
-        log.log("Downloading the latest version at %s" % latest_url)
+        latest_url = 'https://happymac.app/_functions/latest?version=%s&uuid=%s' % (last_version(), hardware_uuid)
+        log.log("Download: getting the latest version at %s" % latest_url)
         latest = json.loads(requests.get(latest_url).content)
-        file_separator = "#@#@#@#@#"
-        line_separator = "@@@"
-        version = latest["version"]
-        new_dir = os.path.join(downloads_dir, version)
-        if os.path.exists(new_dir):
-            log.log("Already on the latest version %s" % version)
-            return
-        log.log("Extracting version %s to %s" % (version, new_dir))
-        if not os.path.exists(new_dir):
-            os.makedirs(new_dir)
-        fout = None
-        for line in latest["contents"].split(line_separator):
-            if line.startswith(file_separator):
-                filename = line.split()[-1]
-                if fout: fout.close()
-                fout = open(os.path.join(new_dir, filename), "w")
-            else:
-                if fout: fout.write("%s\n" % line)
-        if fout: fout.close()
-        init_path = os.path.join(downloads_dir, "__init__.py")
-        log.log("Registering version %s in %s" % (version, init_path))
-        with open(init_path, "a") as fout:
-            fout.write("import %s\n\n" % version)
-        global downloads
-        import downloads
-        reload(downloads)
-        log.log("Successfully downloaded and installed version %s" % version)
-        rumps.notification("HappyMac Update", "A new version was downloaded", "See: Preferences > Versions", sound=True)
-    except Exception as e:
-        log.log("Cannot download latest: %s" % e)
+        latest['contents'] = latest['contents'].replace("@@@", "\n")
+        save_contents(latest)
+    except:
+        error.error("Download: cannot get latest version")
 
-def set_version(version):
-    preferences.set("version", None if version == last_version else version)
+def save_contents(latest):
+    version = latest["version"]
+    path = os.path.join(downloads_dir, '%s' % version)
+    if os.path.exists(path):
+        log.log("Download: version %s already installed" % version)
+    else:
+        with open(path, "wb") as file:
+            pickle.dump(latest, file, 2)
+        log.log("Download: extracted version %s to %s" % (version, path))
+        rumps.notification("HappyMac Update", "A new version was downloaded", "Running %s" % version, sound=True)
+    log.log("Download: available versions: %s" % get_versions())
 
 def last_version():
     return sorted(get_versions())[-1]

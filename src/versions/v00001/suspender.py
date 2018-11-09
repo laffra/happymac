@@ -11,28 +11,28 @@ suspended_tasks = set()
 def manage(foregroundTasks, backgroundTasks):
     for task in foregroundTasks:
         busy_count[task.pid] = 0
-        resume(task.pid)
+        resume_process(task.pid)
 
     for task in filter(lambda task: process.cpu(task.pid) > BACKGROUND_PROCESS_MAX_CPU, backgroundTasks):
         busy_count[task.pid] += 1
         max_busy_count = get_resource_hog_count(task.pid)
         if get_auto_preference(task.pid) and busy_count[task.pid] > max_busy_count:
-            suspend(task.pid)
+            suspend_process(task.pid)
 
-def suspend(pid, manual=False, auto=False):
+def suspend_process(pid, manual=False, auto=False):
     if manual:
         log.log("Suspender: suspend %d %d %s %s %s" % (pid, get_resource_hog_count(pid), manual, auto, process.location(pid)))
-    if process.suspend(pid):
+    if process.suspend_pid(pid):
         suspended_tasks.add(pid)
         if manual:
             reset_resource_hog_count(pid)
         if auto:
             set_auto_preference(pid, True)
 
-def resume(pid, manual=False, auto=False):
+def resume_process(pid, manual=False, auto=False):
     if manual:
         log.log("Resume: resume %d %d %s %s %s" % (pid, get_resource_hog_count(pid), manual, auto, process.location(pid)))
-    if process.resume(pid):
+    if process.resume_pid(pid):
         if pid in suspended_tasks:
             suspended_tasks.remove(pid)
         if manual:
@@ -62,4 +62,4 @@ def get_suspended_tasks():
 
 def exit():
     for pid in suspended_tasks:
-        process.resume(pid)
+        process.resume_pid(pid)

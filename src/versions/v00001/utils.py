@@ -42,7 +42,7 @@ def get_window_name(pid):
     windows = [window for window in get_all_windows() if is_active_window(window, pid)]
     return windows and windows[0].get('kCGWindowName', '') or ''
 
-def clear_cache():
+def clear_windows_cache():
     global all_windows
     all_windows = None
 
@@ -67,5 +67,5 @@ class Timer(threading.Thread):
             try:
                 self.callback()
             except Exception as e:
-                log.log("Error in %s" % self, e)
-                traceback.print_exc()
+
+                log.log("Error in Timer callback %s: %s" % (self.callback.im_func.__name__, e))

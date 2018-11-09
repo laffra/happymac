@@ -62,20 +62,20 @@ def get_error_file_path():
         path = os.path.join(os.path.join(error_dir, "happymac_error-%s.txt" % datetime.datetime.utcnow()))
     except:
         path = os.path.join(os.path.expanduser("~"), "happymac_error.txt")
-    return path
+    return path.replace(' ', '_')
 
 def error(message):
-    stack = "HappyMac Execution Stack at Error Time:\n%s\n\n" % "".join(traceback.format_stack()[:-1])
-    exception = "HappyMac Exception:\n    %s\n\n" % traceback.format_exc()
-    error = "HappyMac Error:\n    %s\n%s%s%s%s%s%s\n%sHappyMac Error:\n    %s\n" % (
+    stack = "HappyMac Execution Stack at Error Time:\n%s\n" % "".join(traceback.format_stack()[:-1])
+    exception = "HappyMac Exception:\n    %s\n" % traceback.format_exc()
+    error = "HappyMac Error:\n    %s\n%s%s%s%s%s\n%s%sHappyMac Error:\n    %s\n" % (
         message,
         get_system_info(),
         get_home_dir_info(),
-        exception,
         get_preferences(),
         get_versions(),
         log.get_log(),
         stack,
+        exception,
         message
     )
     path = get_error_file_path()

@@ -1,64 +1,36 @@
-# cleanup
-echo "###### clean up ###############"
-echo "rm -rf build dist"
-rm -rf build dist
+rm -rf ~/HappyMacApp build dist
 
-# run py2app to package a MacOS .app file
-echo
-echo "###### run py2app ###############"
-export PKG_CONFIG_PATH=/usr/local/Cellar/libffi/3.2.1/lib/pkgconfig/:$PKG_CONFIG_PATH
-python setup.py py2app > /dev/null
-rm -rf .eggs
+RED='\x1B[0;31m'
+NC='\x1B[0m'
 
-# package up the .app into a MacOS .dmg distributable image
-echo
-echo "###### run create-dmg ###############"
+echo -e "${RED}1. run pyinstaller - this takes 15 seconds...${NC}"
+cp app/pyinstaller.spec .
+pyinstaller --onefile --windowed --osx-bundle-identifier com.chrislaffra.osx.happymac pyinstaller.spec 2>&1 | grep ERROR
+rm pyinstaller.spec
+
+rm -rf build
+echo -e "${RED}2. cp -R happymac.app dist${NC}"
+cp -R app/happymac.app.template dist/happymac.app
+echo -e "${RED}3. mv dist/happymac dist/happymac.app/Contents/MacOS${NC}"
+mv dist/happymac dist/happymac.app/Contents/MacOS
+
+echo -e "${RED}4. code sign package${NC}"
+codesign -v -f --deep -i com.chrislaffra.osx.happymac -s "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" dist/happymac.app/Contents/MacOs/happymac
+codesign -v -f -i com.chrislaffra.osx.happymac -s "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" dist/happymac.app
+
 cd dist
-mv HappyMac.app t
-mv t happymac.app
-
-echo "###### fix python to Nov1 version #############"
-hdiutil attach ../happymac-nov-1.dmg
-rm -rf happymac.app/Contents/Frameworks/Python.framework
-rm -rf happymac.app/Contents/MacOS/python
-cp -r /Volumes/happymac/happymac.app/Contents/Frameworks/Python.framework happymac.app/Contents/Frameworks/
-cp -r /Volumes/happymac/happymac.app/Contents/MacOS/python happymac.app/Contents/MacOS
-hdiutil detach /Volumes/happymac
-
-echo "###### codesign subcomponents ###############"
-# https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/Procedures/Procedures.html
-# https://forum.xojo.com/49408-10-14-hardened-runtime-and-app-notarization/0
-# https://stackoverflow.com/questions/52905940/how-to-codesign-and-enable-the-hardened-runtime-for-a-3rd-party-cli-on-xcode
-
-for filename in $(find happymac.app/ -name "*.dylib"); do
-    echo "Codesign $filename"
-    codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f $filename
-done
-for filename in $(find happymac.app/ -name "*.so"); do
-    echo "Codesign $filename"
-    codesign --force --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f $filename
-done
-codesign --force --entitlements ../app.entitlements --options runtime --deep --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/Frameworks/Python.framework/Versions/2.7/Python
-codesign --force --entitlements ../app.entitlements --options runtime --deep --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/MacOS/python
-codesign --force --entitlements ../app.entitlements --options runtime --deep --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" -f happymac.app/Contents/MacOS/happymac
-
-echo "###### create dmg ###############"
-create-dmg happymac.app/
+echo -e "${RED}5. create-dmg HappyMac.app${NC}"
+create-dmg HappyMac.app
 mv happymac\ 0.1.0.dmg happymac.dmg
-
-echo "###### codesign dmg ###############"
-codesign --force --entitlements ../app.entitlements --options runtime --deep --sign "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" happymac.dmg
-
-# create pkg
-hdiutil attach happymac.dmg
-pkgbuild --root /Volumes/happymac --version 1.0 --identifier app.happymac --install-location / happymac.pkg
-hdiutil detach /Volumes/happymac
-ls -l
 cd ..
 
-# run the result
-echo
-echo "###### done ###############"
-echo "Distribution version is in: `pwd`/dist/happymac.dmg"
+echo -e "${RED}6. code sign dmg${NC}"
+codesign -v -f -i com.chrislaffra.osx.happymac -s "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" dist/happymac.dmg
+ls -l dist
+
+echo -e "${RED}7. Probably need a new version?${NC}"
+python src/upload.py
+
+echo -e "${RED}8. done building${NC}"
+echo -e "${RED}9. Final step: run: happymac.app/Contents/MacOS/happymac${NC}"
 dist/happymac.app/Contents/MacOS/happymac
-# open dist/happymac.dmg

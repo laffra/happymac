@@ -8,7 +8,7 @@ import time
 import utils
 import webbrowser
 
-DB_FILE_NAME = "activity.db"
+DB_FILE_NAME = "activities.db"
 DORMANT_PROCESS_CPU = 0.1
 INIT_QUERY = """CREATE TABLE IF NOT EXISTS activities (
     timestamp float,
@@ -33,7 +33,7 @@ def get_report_path():
 
 def update():
     pid = utils.get_current_app_pid()
-    cpu = process.family_cpu(pid)
+    cpu = process.family_cpu_usage(pid)
     if cpu < DORMANT_PROCESS_CPU:
         return
     connection = sqlite3.connect(get_activity_path())
@@ -77,7 +77,7 @@ def generate_report():
                 ))
             output.write("</table>")
         webbrowser.open("file://%s" % filename)
-    except Exception as e:
+    except:
         error.error("Cannot generate report")
 
 sqlite3.connect(get_activity_path()).cursor().execute(INIT_QUERY)

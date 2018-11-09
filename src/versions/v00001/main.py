@@ -1,4 +1,5 @@
 import activity
+import error
 import functools
 import install
 import license
@@ -14,7 +15,13 @@ import utils
 import version_manager
 import webbrowser
 
-ICONS = [ "icons/happy.png", "icons/frown.png", "icons/sweating.png", "icons/burn.png" ]
+resource_path = getattr(sys, "_MEIPASS", os.path.abspath("."))
+ICONS = [
+    os.path.join(resource_path, "icons/happy.png"),
+    os.path.join(resource_path, "icons/frown.png"),
+    os.path.join(resource_path, "icons/sweating.png"),
+    os.path.join(resource_path, "icons/burn.png"),
+]
 
 TITLE_QUIT = "Quit HappyMac"
 TITLE_ACTIVITY_MONITOR = "Open Activity Monitor"
@@ -31,7 +38,6 @@ TITLE_SUSPEND = "Suspend Now"
 TITLE_AUTO_SUSPEND = "Auto Suspend"
 TITLE_GOOGLE = "Google this..."
 TITLE_RESTART = "Restart"
-TITLE_VERSIONS = "Versions"
 
 TITLE_PREFERENCES = "Preferences"
 TITLE_STATUS_BAR = "Status Bar"
@@ -45,7 +51,7 @@ IDLE_PROCESS_PERCENT_CPU = 3
 
 class HappyMacStatusBarApp(rumps.App):
     def __init__(self, quit_callback=None):
-        super(HappyMacStatusBarApp, self).__init__("")
+        super(HappyMacStatusBarApp, self).__init__("", quit_button=None)
         self.quit_button = None
         self.last_title = ""
         self.quit_callback = quit_callback
@@ -53,43 +59,76 @@ class HappyMacStatusBarApp(rumps.App):
         self.create_menu()
         self.start = time.time()
         utils.Timer(2, self.update).start()
-        log.log("Started HappyMac")
+        log.log("Started HappyMac %s" % version_manager.last_version())
 
     def show_emoji(self, menuItem=None):
-        preferences.set(KEY_ICON_DETAILS, TITLE_JUST_EMOJI)
-        self.handle_action()
+        try:
+            preferences.set(KEY_ICON_DETAILS, TITLE_JUST_EMOJI)
+        except:
+            error.error("Error in menu callback")
+        finally:
+            self.handle_action()
 
     def show_emoji_and_name(self, menuItem=None):
-        preferences.set(KEY_ICON_DETAILS, TITLE_EMOJI_AND_NAME)
-        self.handle_action()
+        try:
+            preferences.set(KEY_ICON_DETAILS, TITLE_EMOJI_AND_NAME)
+        except:
+            error.error("Error in menu callback")
+        finally:
+            self.handle_action()
 
     def terminate(self, menuItem, pid):
-        process.terminate(pid)
-        self.handle_action()
+        try:
+            process.terminate_process(pid)
+        except:
+            error.error("Error in menu callback")
+        finally:
+            self.handle_action()
 
     def resume(self, menuItem, pid, auto=False):
-        suspender.resume(pid, manual=True, auto=auto)
-        self.handle_action()
+        try:
+            suspender.resume_process(pid, manual=True, auto=auto)
+        except:
+            error.error("Error in menu callback")
+        finally:
+            self.handle_action()
 
     def suspend(self, menuItem, pid, auto=False):
-        suspender.suspend(pid, manual=True, auto=auto)
-        self.handle_action()
+        try:
+            suspender.suspend_process(pid, manual=True, auto=auto)
+        except:
+            error.error("Error in menu callback")
+        finally:
+            self.handle_action()
 
     def google(self, menuItem, pid):
-        webbrowser.open("https://google.com/search?q=Mac process '%s'" % process.name(pid))
-        log.log("Google %s" % process.name(pid))
-        self.handle_action()
+        try:
+            webbrowser.open("https://google.com/search?q=Mac process '%s'" % process.name(pid))
+            log.log("Google %s" % process.name(pid))
+        except:
+            error.error("Error in menu callback")
+        finally:
+            self.handle_action()
 
     def report(self, menuItem=None):
-        activity.generate_report()
+        try:
+            activity.generate_report()
+        except:
+            error.error("Error in menu callback")
+        finally:
+            self.handle_action()
 
     def activity_monitor(self, menuItem=None):
-        utils.run_osa_script('tell application "Activity Monitor" to activate')
-        log.log("Launch Activity Monitor")
-        self.handle_action()
+        try:
+            utils.run_osa_script('tell application "Activity Monitor" to activate')
+            log.log("Launch Activity Monitor")
+        except:
+            error.error("Error in menu callback")
+        finally:
+            self.handle_action()
 
     def version(self):
-        return os.path.basename(os.path.dirname(__file__))
+        return version_manager.last_version()
 
     def menu_item_for_process(self, p, resumable=False, suspendable=False):
         name = p.name()
@@ -126,7 +165,6 @@ class HappyMacStatusBarApp(rumps.App):
                         rumps.MenuItem(TITLE_JUST_EMOJI, callback=self.show_emoji),
                         rumps.MenuItem(TITLE_EMOJI_AND_NAME, callback=self.show_emoji_and_name),
                     ],
-                    TITLE_VERSIONS: self.versions()
                 }
             },
             None,
@@ -165,8 +203,8 @@ class HappyMacStatusBarApp(rumps.App):
             self.menu.insert_after(TITLE_SUSPENDED_PROCESSES, item)
 
     def update(self, force_update=False):
-        process.clear_cache()
-        utils.clear_cache()
+        process.clear_process_cache()
+        utils.clear_windows_cache()
         foreground_tasks = process.family(utils.get_current_app_pid())
         background_tasks = process.top(exclude=foreground_tasks)
         self.update_menu(foreground_tasks, background_tasks, suspender.get_suspended_tasks(), force_update)
@@ -184,22 +222,8 @@ class HappyMacStatusBarApp(rumps.App):
         finally:
             rumps.quit_application()
 
-    def versions(self):
-        return [
-            rumps.MenuItem(version, callback=functools.partial(self.switch_version, version=version))
-            for version in version_manager.get_versions()
-        ]
-
-    def switch_version(self, menuItem, version):
-        try:
-            log.log("Switch to version %s" % version)
-            version_manager.set_version(version)
-            self.restart()
-        except Exception as e:
-            log.log("Cannot switch to version %s" % version, e)
-
     def restart(self, menuItem=None):
-        log.log("Restart");
+        log.log("Restart")
         utils.run_osa_script("""
             delay 1
             tell application "happymac" to activate
@@ -219,8 +243,7 @@ class HappyMacStatusBarApp(rumps.App):
         self.update(True)
 
 
-def main(quit_callback=None):
-    def run(key):
+def run(quit_callback=None):
+    if license.get_license():
         rumps.notification("HappyMac", "HappyMac is now running", "See the emoji icon in the status bar")
         HappyMacStatusBarApp(quit_callback).run()
-    license.get_license(run)

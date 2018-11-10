@@ -24,7 +24,6 @@ ICONS = [
 ]
 
 TITLE_QUIT = "Quit HappyMac"
-TITLE_ACTIVITY_MONITOR = "Open Activity Monitor"
 TITLE_REPORT = "Show Activity Report..."
 TITLE_ABOUT = "About HappyMac - %s"
 TITLE_CURRENT_PROCESSES = "Current App Tasks"
@@ -117,15 +116,6 @@ class HappyMacStatusBarApp(rumps.App):
         finally:
             self.handle_action()
 
-    def activity_monitor(self, menuItem=None):
-        try:
-            utils.run_osa_script('tell application "Activity Monitor" to activate')
-            log.log("Launch Activity Monitor")
-        except:
-            error.error("Error in menu callback")
-        finally:
-            self.handle_action()
-
     def version(self):
         return version_manager.last_version()
 
@@ -173,7 +163,6 @@ class HappyMacStatusBarApp(rumps.App):
             None,
             rumps.MenuItem(TITLE_SUSPENDED_PROCESSES),
             None,
-            rumps.MenuItem(TITLE_ACTIVITY_MONITOR, callback=self.activity_monitor),
             rumps.MenuItem(TITLE_REPORT, callback=self.report),
             None,
             rumps.MenuItem(TITLE_QUIT, callback=self.quit),

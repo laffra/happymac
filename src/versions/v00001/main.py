@@ -38,7 +38,6 @@ TITLE_AUTO_SUSPEND = "Auto Suspend"
 TITLE_GOOGLE = "Google this..."
 
 TITLE_PREFERENCES = "Preferences"
-TITLE_STATUS_BAR = "Status Bar"
 TITLE_JUST_EMOJI = "Show just an emoji"
 TITLE_EMOJI_AND_NAME = "Show emoji and name"
 
@@ -148,14 +147,10 @@ class HappyMacStatusBarApp(rumps.App):
         self.menu = [
             rumps.MenuItem(TITLE_ABOUT % self.version(), callback=self.about),
             None,
-            {TITLE_PREFERENCES:
-                {
-                    TITLE_STATUS_BAR: [
-                        rumps.MenuItem(TITLE_JUST_EMOJI, callback=self.show_emoji),
-                        rumps.MenuItem(TITLE_EMOJI_AND_NAME, callback=self.show_emoji_and_name),
-                    ],
-                }
-            },
+            {TITLE_PREFERENCES: [
+                rumps.MenuItem(TITLE_JUST_EMOJI, callback=self.show_emoji),
+                rumps.MenuItem(TITLE_EMOJI_AND_NAME, callback=self.show_emoji_and_name),
+            ],
             None,
             rumps.MenuItem(TITLE_CURRENT_PROCESSES),
             None,

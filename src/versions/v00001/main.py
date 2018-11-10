@@ -25,7 +25,7 @@ ICONS = [
 
 TITLE_QUIT = "Quit HappyMac"
 TITLE_ACTIVITY_MONITOR = "Open Activity Monitor"
-TITLE_REPORT = "Show report..."
+TITLE_REPORT = "Show Activity Report..."
 TITLE_ABOUT = "About HappyMac - %s"
 TITLE_CURRENT_PROCESSES = "Current App Tasks"
 TITLE_OTHER_PROCESSES = "Background Tasks:"
@@ -37,7 +37,6 @@ TITLE_RESUME_AND_NEVER_SUSPEND = "Never Suspend"
 TITLE_SUSPEND = "Suspend Now"
 TITLE_AUTO_SUSPEND = "Auto Suspend"
 TITLE_GOOGLE = "Google this..."
-TITLE_RESTART = "Restart"
 
 TITLE_PREFERENCES = "Preferences"
 TITLE_STATUS_BAR = "Status Bar"
@@ -176,7 +175,6 @@ class HappyMacStatusBarApp(rumps.App):
             None,
             rumps.MenuItem(TITLE_ACTIVITY_MONITOR, callback=self.activity_monitor),
             rumps.MenuItem(TITLE_REPORT, callback=self.report),
-            rumps.MenuItem(TITLE_RESTART, callback=self.restart),
             None,
             rumps.MenuItem(TITLE_QUIT, callback=self.quit),
         ]
@@ -221,14 +219,6 @@ class HappyMacStatusBarApp(rumps.App):
             self.quit_callback()
         finally:
             rumps.quit_application()
-
-    def restart(self, menuItem=None):
-        log.log("Restart")
-        utils.run_osa_script("""
-            delay 1
-            tell application "happymac" to activate
-        """)
-        self.quit()
 
     def getIcon(self, percent):
         iconIndex = 0 if not percent else max(0, min(len(ICONS) - 1, int(percent * len(ICONS) / 100.0)))

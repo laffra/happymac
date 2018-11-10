@@ -39,7 +39,7 @@ def process(pid):
 def name(pid):
     return process(pid).name()
 
-def parent(pid):
+def parent_pid(pid):
     return process(pid).ppid()
 
 def process_time(pid):
@@ -56,10 +56,10 @@ def child_processes(pid, includeSelf=True):
 
 def parents(pid, includeSelf=True):
     processes = []
-    p = process(pid if includeSelf else parent(pid))
+    p = process(pid if includeSelf else parent_pid(pid))
     while p.pid:
         processes.append(p)
-        p = process(parent(p.pid))
+        p = process(parent_pid(p.pid))
     return sorted(set(processes), key=lambda p: cpu(p.pid))
 
 def family(pid):

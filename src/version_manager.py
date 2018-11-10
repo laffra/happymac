@@ -26,10 +26,12 @@ if not os.path.exists(downloads_dir):
     os.makedirs(downloads_dir)
 
 sys.path.append(home_dir)
+running_local = not getattr(sys, "_MEIPASS", False)
 
 
 def main(quit_callback=None):
-    download_latest()
+    if not running_local:
+        download_latest()
     try:
         load_version(last_version(), quit_callback)
     except Exception as e:
@@ -99,6 +101,8 @@ def save_contents(latest):
     log.log("Download: available versions: %s" % get_versions())
 
 def last_version():
+    if running_local:
+        return "v00001"
     return sorted(get_versions())[-1]
 
 def get_hardware_uuid():

@@ -90,4 +90,4 @@ def error(message):
     except:
         pass
     print "For details see: %s" % path
-    rumps.notification("HappyMac", "Error: %s. For details see:" % message, path)
+    rumps.notification("HappyMac", "Error: %s. For details see:" % message, path, sound=True)

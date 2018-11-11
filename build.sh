@@ -32,5 +32,5 @@ echo -e "${RED}7. Probably need a new version?${NC}"
 python src/upload.py
 
 echo -e "${RED}8. done building${NC}"
-echo -e "${RED}9. Final step: run: happymac.app/Contents/MacOS/happymac${NC}"
-dist/happymac.app/Contents/MacOS/happymac
+echo -e "${RED}9. Final step: open dist/happymac.dmg"
+open dist/happymac.dmg

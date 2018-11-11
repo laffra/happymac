@@ -99,7 +99,7 @@ def generate_report():
     try:
         filename = get_report_path()
         activities = get_activities()
-        log.log("Generate report with %d event in file %s" % (len(activities), filename))
+        log.log("Generate report with %d events in file %s" % (len(activities), filename))
         with open(filename, "w") as output:
             generate_header(output)
             generate_pie_chart(output, activities)
@@ -166,9 +166,6 @@ def generate_pie_chart(output, activities):
 
     for timestamp, cpu, app_cpu, x, y, w, h, pixel, location, pid, ppid, app_name, window_title, url, fav in get_activities():
         counts[(pixel, url or app_name)] += 1
-
-    for k, v in counts.items():
-        print k, ":", v
 
     def format(title):
         return title.encode("utf8")[:32]

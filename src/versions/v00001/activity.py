@@ -4,6 +4,7 @@ import error
 import log
 import os
 import process
+import re
 import sqlite3
 import time
 import utils
@@ -24,11 +25,14 @@ INIT_QUERY = """CREATE TABLE IF NOT EXISTS activities (
     pid text,
     ppid text,
     name text,
-    title text
+    title text,
+    url text,
+    fav text
 )"""
-
+HOUR_IN_MS = 3600 * 1000000
 
 home_dir = os.path.join(os.path.expanduser("~"), "HappyMacApp")
+title_details = {}
 
 def get_activity_path():
     if not os.path.exists(home_dir):
@@ -41,6 +45,20 @@ def get_report_path():
         os.makedirs(reports_dir)
     return os.path.join(reports_dir, "report_%s.html" % datetime.datetime.utcnow())
 
+def update_tab(url, fav, title):
+    since_when = int(time.time()) - HOUR_IN_MS
+    connection = sqlite3.connect(get_activity_path())
+    cursor = connection.cursor()
+    cursor.execute('''
+            UPDATE activities SET url = "%s", fav = "%s"
+            WHERE TITLE = "%s" AND name = "Google Chrome" AND timestamp > ?
+        ''' % (url, fav, title),
+        (since_when,)
+    )
+    connection.commit()
+    title_details[title] = (url, fav)
+    log.log("New tab: %s" % repr(title))
+
 def update():
     pid = utils.get_current_app_pid()
     cpu = process.family_cpu_usage(pid)
@@ -49,7 +67,13 @@ def update():
     connection = sqlite3.connect(get_activity_path())
     cursor = connection.cursor()
     x, y, w, h = utils.get_active_window_dimensions()
-    cursor.execute("INSERT INTO activities (timestamp,system,cpu,x,y,width,height,pixel,location,pid,ppid,name,title) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+    title = utils.get_active_window_name()
+    app_name = utils.get_current_app_name()
+    url = get_url('', app_name, title)
+    cursor.execute("""
+            INSERT INTO activities (timestamp,system,cpu,x,y,width,height,pixel,location,pid,ppid,name,title,url)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, [
         int(time.time()),
         process.cpu(-1),
         cpu,
@@ -61,15 +85,15 @@ def update():
         process.location(pid),
         pid,
         process.parent_pid(pid),
-        utils.get_current_app_name(),
-        utils.get_active_window_name()
+        app_name,
+        title,
+        url
     ])
     connection.commit()
 
 def get_activities():
     cursor = sqlite3.connect(get_activity_path()).cursor()
-    cursor.execute("SELECT * FROM activities")
-    return cursor.fetchall()
+    return cursor.execute("SELECT * FROM activities").fetchall()
 
 def generate_report():
     try:
@@ -94,7 +118,7 @@ def generate_header(output):
                 <script src="https://www.chartjs.org/samples/latest/utils.js"></script>
             </head>
             <body>
-                <div id="canvas-holder" style="width:40%">
+                <div id="canvas-holder">
                     <canvas id="chart-area"></canvas>
                 </div>
     """)
@@ -106,9 +130,6 @@ def generate_footer(output):
     """)
 
 def generate_pie_chart(output, activities):
-    counts = collections.defaultdict(int)
-    for timestamp, cpu, app_cpu, x, y, w, h, pixel, location, pid, ppid, app_name, window_title in get_activities():
-        counts[(pixel, app_name, window_title)] += 1
     html_template = """
         <script>
         var colors = [
@@ -141,10 +162,36 @@ def generate_pie_chart(output, activities):
 		};
         </script>
     """
-    labels = repr([window_title.encode("utf8") for pixel, app_name, window_title in counts.keys()])
+    counts = collections.defaultdict(int)
+
+    for timestamp, cpu, app_cpu, x, y, w, h, pixel, location, pid, ppid, app_name, window_title, url, fav in get_activities():
+        counts[(pixel, url or app_name)] += 1
+
+    for k, v in counts.items():
+        print k, ":", v
+
+    def format(title):
+        return title.encode("utf8")[:32]
+
+    labels = repr([format(title) for _,title  in counts.keys()])
     data = repr(list(counts.values()))
     html = html_template % {"data": data, "labels": labels}
     output.write(html)
+
+def pixelToColor(pixel):
+    return "rgba(%d,%d,%d,%d)" % eval(pixel) if pixel else "white"
+
+def get_fav(fav, app_name, title):
+    if app_name != "Google Chrome":
+        return fav
+    title = title.encode('ascii', 'ignore')
+    return (fav or title_details.get(title, ('',''))[1]).encode("ascii", "ignore")
+
+def get_url(url, app_name, title):
+    if app_name != "Google Chrome":
+        return url
+    title = title.encode('ascii', 'ignore')
+    return (url or title_details.get(title, ('',''))[0]).encode("ascii", "ignore")
 
 def generate_full_table(output, activities):
     output.write("<h1>All Events</h1><table border=1 width=\"1400px\">")
@@ -160,17 +207,18 @@ def generate_full_table(output, activities):
             <th>Location</th>
             <th>APP NAME</th>
             <th>Window/Tab Title</td>
+            <th>Url</th>
+            <th>FavIcon</th>
         </tr>""")
 
-    def pixelToColor(pixel):
-        return "rgba(%d,%d,%d,%d)" % eval(pixel) if pixel else "white"
-
-    for timestamp, cpu, app_cpu, x, y, w, h, pixel, location, pid, ppid, app_name, window_title in get_activities():
-        output.write("""
+    for timestamp, cpu, app_cpu, x, y, w, h, pixel, location, pid, ppid, app_name, window_title, url, fav in activities:
+        output.write(u"""
         <tr>
         <td>%s</td>
         <td>%d%%</td>
         <td>%d%%</td>
+        <td>%s</td>
+        <td>%s</td>
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
@@ -184,12 +232,17 @@ def generate_full_table(output, activities):
             int(cpu * 100),
             int(app_cpu * 100),
             (x, y, w, h),
-            '<div style="width:40px; height:40px; background:%s"/>' % pixelToColor(pixel),
+            u'<div style="width:40px; height:40px; background:%s"/>' % pixelToColor(pixel),
             pid,
             ppid,
             location,
-            app_name.encode('ascii','ignore'),
-            window_title.encode('ascii','ignore'),
+            app_name,
+            window_title.encode('ascii', 'ignore'),
+            u'<a href=%s>%s</a>' % (
+                get_url(url, app_name, window_title),
+                get_url(url, app_name, window_title),
+            ),
+            u'<img src="%s" width=38>' % get_fav(fav, app_name, window_title),
         ))
     output.write("</table>")
 

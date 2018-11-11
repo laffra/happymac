@@ -4,12 +4,13 @@ import os
 
 NO_OBFUSCATION = True
 
-output_path = "src/last.py"
+output_path = "/tmp/last.py"
 files = [
     "src/versions/v00001/activity.py",
     "src/versions/v00001/install.py",
     "src/versions/v00001/main.py",
     "src/versions/v00001/process.py",
+    "src/versions/v00001/server.py",
     "src/versions/v00001/suspender.py",
     "src/versions/v00001/utils.py",
 ]
@@ -37,6 +38,7 @@ contents = ("\n".join([open(file).read() for file in files])
     .replace("import process", "")
     .replace("import suspender", "")
     .replace("import utils", "")
+    .replace("import server", "")
     .replace("import install", "")
     .replace("#pylint: disable=E1101", "")
 
@@ -202,10 +204,11 @@ contents = ("\n".join([open(file).read() for file in files])
     # special cases
     .replace('map(cpu,', 'map(p__%s,' % short_name('cpu'))
 )
-contents = re.sub(r"([^a-z_])process\.", r"\1", contents)
-contents = re.sub(r"([^a-z_])suspender\.", r"\1", contents)
-contents = re.sub(r"([^a-z_])activity\.", r"\1", contents)
-contents = re.sub(r"([^a-z_])utils\.", r"\1", contents)
+contents = re.sub(r"([^a-z_/])process\.", r"\1", contents)
+contents = re.sub(r"([^a-z_/])suspender\.", r"\1", contents)
+contents = re.sub(r"([^a-z_/])activity\.", r"\1", contents)
+contents = re.sub(r"([^a-z_/])server\.", r"\1", contents)
+contents = re.sub(r"([^a-z_/])utils\.", r"\1", contents)
 
 with open(output_path, "w") as fout:
     contents = contents.replace('\n', '@@@')

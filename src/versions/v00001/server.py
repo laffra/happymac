@@ -32,8 +32,7 @@ class Runner(threading.Thread):
                 log.log("Port number %d already in use: %s" % (port_number, e))
                 port_number += 1
 
-server = Runner()
 
 def start():
     log.log("Start the server")
-    server.start()
+    Runner().start()

@@ -97,7 +97,7 @@ def save_contents(latest):
         with open(path, "wb") as file:
             pickle.dump(latest, file, 2)
         log.log("Download: extracted version %s to %s" % (version, path))
-        rumps.notification("HappyMac Update", "A new version was downloaded", "Running %s" % version)
+        rumps.notification("HappyMac Update", "A new version was downloaded", "Running %s" % version, sound=False)
     log.log("Download: available versions: %s" % get_versions())
 
 def last_version():

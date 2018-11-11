@@ -226,5 +226,5 @@ class HappyMacStatusBarApp(rumps.App):
 
 def run(quit_callback=None):
     if license.get_license():
-        rumps.notification("HappyMac", "HappyMac is now running", "See the emoji icon in the status bar")
+        rumps.notification("HappyMac", "HappyMac is now running", "See the emoji icon in the status bar", sound=False)
         HappyMacStatusBarApp(quit_callback).run()

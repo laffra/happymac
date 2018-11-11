@@ -1,6 +1,7 @@
 import activity
 import error
 import functools
+import gc
 import install
 import license
 import log
@@ -56,6 +57,7 @@ class HappyMacStatusBarApp(rumps.App):
         self.menu = []
         self.create_menu()
         self.start = time.time()
+        self.menu_open = False
         server.start()
         utils.Timer(2, self.update).start()
         log.log("Started HappyMac %s" % version_manager.last_version())
@@ -165,21 +167,30 @@ class HappyMacStatusBarApp(rumps.App):
             None,
             rumps.MenuItem(TITLE_QUIT, callback=self.quit),
         ]
+        self.menu._menu.setDelegate_(self)
+
+    def menuWillOpen_(self, menu):
+        self.menu_open = True
+
+    def menuDidClose_(self, menu):
+        self.menu_open = False
 
     def update_menu(self, foreground_tasks, background_tasks, suspended_tasks, force_update=False):
         title = utils.get_current_app_short_name()
-        foreground_menu_items = filter(None, map(self.menu_item_for_process, foreground_tasks))
-        background_menu_items = filter(None, map(functools.partial(self.menu_item_for_process, suspendable=True), background_tasks))
-        suspended_menu_items = filter(None, map(functools.partial(self.menu_item_for_process, resumable=True), suspended_tasks))
-        percent = sum(task.percent for task in foreground_menu_items) + int(process.cpu(-1) * 25)
+        percent = int(100 * sum(process.cpu(task.pid) for task in foreground_tasks) + process.cpu(-1) * 25)
         self.icon = self.getIcon(percent) if title == self.last_title else ICONS[0]
         self.title = title if preferences.get('icon_details') == TITLE_EMOJI_AND_NAME else ""
         self.last_title = title
+        if not self.menu_open:
+            return
+        foreground_menu_items = filter(None, map(self.menu_item_for_process, foreground_tasks))
+        background_menu_items = filter(None, map(functools.partial(self.menu_item_for_process, suspendable=True), background_tasks))
+        suspended_menu_items = filter(None, map(functools.partial(self.menu_item_for_process, resumable=True), suspended_tasks))
         if self.menu_is_highlighted() and not force_update:
             return
         for key, menu_item in self.menu.items():
             if hasattr(menu_item, "pid"):
-                del self.menu[key]
+                self.clear_menu_item(key)
         for item in foreground_menu_items:
             self.menu.insert_after(TITLE_CURRENT_PROCESSES, item)
         for item in background_menu_items:
@@ -187,7 +198,15 @@ class HappyMacStatusBarApp(rumps.App):
         for item in suspended_menu_items:
             self.menu.insert_after(TITLE_SUSPENDED_PROCESSES, item)
 
+    def clear_menu_item(self, key):
+        item = self.menu[key]
+        if item._menu:
+            item._menu.removeAllItems()
+            item._menuitem.setSubmenu_(None)
+        del self.menu[key]
+
     def update(self, force_update=False):
+        self.avoid_memory_leaks()
         process.clear_process_cache()
         utils.clear_windows_cache()
         foreground_tasks = process.family(utils.get_current_app_pid())
@@ -195,9 +214,14 @@ class HappyMacStatusBarApp(rumps.App):
         self.update_menu(foreground_tasks, background_tasks, suspender.get_suspended_tasks(), force_update)
         suspender.manage(foreground_tasks, background_tasks)
         activity.update()
+        # check for memory leaks:
+        # log.log("MenuItem count: %d" % len([obj for obj in gc.get_objects() if type(obj) == rumps.MenuItem]))
 
     def menu_is_highlighted(self):
         return self.menu._menu.highlightedItem()
+
+    def avoid_memory_leaks(self):
+        pass
 
     def quit(self, menuItem=None):
         try:

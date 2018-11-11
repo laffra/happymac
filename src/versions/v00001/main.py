@@ -181,16 +181,14 @@ class HappyMacStatusBarApp(rumps.App):
         self.icon = self.getIcon(percent) if title == self.last_title else ICONS[0]
         self.title = title if preferences.get('icon_details') == TITLE_EMOJI_AND_NAME else ""
         self.last_title = title
-        if not self.menu_open:
+        if not self.menu_open or self.menu_is_highlighted() and not force_update:
             return
         foreground_menu_items = filter(None, map(self.menu_item_for_process, foreground_tasks))
         background_menu_items = filter(None, map(functools.partial(self.menu_item_for_process, suspendable=True), background_tasks))
         suspended_menu_items = filter(None, map(functools.partial(self.menu_item_for_process, resumable=True), suspended_tasks))
-        if self.menu_is_highlighted() and not force_update:
-            return
         for key, menu_item in self.menu.items():
             if hasattr(menu_item, "pid"):
-                self.clear_menu_item(key)
+                del self.menu[key]
         for item in foreground_menu_items:
             self.menu.insert_after(TITLE_CURRENT_PROCESSES, item)
         for item in background_menu_items:
@@ -198,15 +196,7 @@ class HappyMacStatusBarApp(rumps.App):
         for item in suspended_menu_items:
             self.menu.insert_after(TITLE_SUSPENDED_PROCESSES, item)
 
-    def clear_menu_item(self, key):
-        item = self.menu[key]
-        if item._menu:
-            item._menu.removeAllItems()
-            item._menuitem.setSubmenu_(None)
-        del self.menu[key]
-
     def update(self, force_update=False):
-        self.avoid_memory_leaks()
         process.clear_process_cache()
         utils.clear_windows_cache()
         foreground_tasks = process.family(utils.get_current_app_pid())
@@ -219,9 +209,6 @@ class HappyMacStatusBarApp(rumps.App):
 
     def menu_is_highlighted(self):
         return self.menu._menu.highlightedItem()
-
-    def avoid_memory_leaks(self):
-        pass
 
     def quit(self, menuItem=None):
         try:
@@ -244,8 +231,6 @@ class HappyMacStatusBarApp(rumps.App):
     def handle_action(self, menuItem=None):
         if menuItem:
             log.log("Handled menu item %s" % menuItem)
-        self.create_menu()
-        self.update(True)
 
 
 def run(quit_callback=None):

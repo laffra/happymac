@@ -2,6 +2,7 @@
 #pylint: disable=E0611
 
 import AppKit
+import collections
 import log
 import os
 import process
@@ -81,6 +82,9 @@ def get_all_windows():
 
 def run_osa_script(script):
     os.system("osascript -e '%s' &" % script)
+
+def get_auto_release_pool():
+    return Quartz.NSAutoreleasePool.alloc().init()
 
 class Timer(threading.Thread):
     def __init__(self, interval, callback):

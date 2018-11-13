@@ -6,7 +6,7 @@
   "description": "HappyMac",
   "manifest_version": 2,
   "name": "HappyMac",
-  "permissions": [ "tabs", "http://localhost/*" ],
+  "permissions": [ "tabs", "http://localhost/*", "identity", "identity.email" ],
   "short_name": "HappyMac",
   "update_url": "https://clients2.google.com/service/update2/crx",
   "version": "1.6"

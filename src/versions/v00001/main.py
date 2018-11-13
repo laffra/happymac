@@ -58,7 +58,7 @@ class HappyMacStatusBarApp(rumps.App):
         self.create_menu()
         self.start = time.time()
         self.menu_open = False
-        server.start()
+        server.start_server()
         utils.Timer(2, self.update).start()
         log.log("Started HappyMac %s" % version_manager.last_version())
 
@@ -203,7 +203,7 @@ class HappyMacStatusBarApp(rumps.App):
         background_tasks = process.top(exclude=foreground_tasks)
         self.update_menu(foreground_tasks, background_tasks, suspender.get_suspended_tasks(), force_update)
         suspender.manage(foreground_tasks, background_tasks)
-        activity.update()
+        activity.update_activities()
         # check for memory leaks:
         # log.log("MenuItem count: %d" % len([obj for obj in gc.get_objects() if type(obj) == rumps.MenuItem]))
 

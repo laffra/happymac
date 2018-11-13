@@ -104,7 +104,7 @@ def suspend_pid(pid):
     try:
         process(pid).suspend()
         return True
-    except psutil.AccessDenied:
+    except (psutil.AccessDenied, psutil.NoSuchProcess, psutil.ZombieProcess):
         pass
     except Exception as e:
         log.log("Unhandled Error in process.suspend", e)
@@ -113,7 +113,7 @@ def resume_pid(pid):
     try:
         process(pid).resume()
         return True
-    except psutil.AccessDenied:
+    except (psutil.AccessDenied, psutil.NoSuchProcess, psutil.ZombieProcess):
         pass
     except Exception as e:
         log.log("Unhandled Error in process.resume", e)

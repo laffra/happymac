@@ -16,11 +16,7 @@ INIT_QUERY = """CREATE TABLE IF NOT EXISTS activities (
     timestamp float,
     system float,
     cpu float,
-    x number,
-    y number,
-    width number,
-    height number,
-    pixel text,
+    email text,
     location text,
     pid text,
     ppid text,
@@ -45,43 +41,38 @@ def get_report_path():
         os.makedirs(reports_dir)
     return os.path.join(reports_dir, "report_%s.html" % datetime.datetime.utcnow())
 
-def update_tab(url, fav, title):
+def update_tab(email, url, fav, title):
     since_when = int(time.time()) - HOUR_IN_MS
     connection = sqlite3.connect(get_activity_path())
     cursor = connection.cursor()
     cursor.execute('''
-            UPDATE activities SET url = "%s", fav = "%s"
+            UPDATE activities SET email = "%s", url = "%s", fav = "%s"
             WHERE TITLE = "%s" AND name = "Google Chrome" AND timestamp > ?
-        ''' % (url, fav, title),
+        ''' % (email, url, fav, title),
         (since_when,)
     )
     connection.commit()
     title_details[title] = (url, fav)
-    log.log("New tab: %s" % repr(title))
+    log.log("New tab: %s %s" % (email, url))
 
-def update():
+def update_activities():
     pid = utils.get_current_app_pid()
     cpu = process.family_cpu_usage(pid)
     if cpu < DORMANT_PROCESS_CPU:
         return
     connection = sqlite3.connect(get_activity_path())
     cursor = connection.cursor()
-    x, y, w, h = utils.get_active_window_dimensions()
     title = utils.get_active_window_name()
     app_name = utils.get_current_app_name()
     url = get_url('', app_name, title)
     cursor.execute("""
-            INSERT INTO activities (timestamp,system,cpu,x,y,width,height,pixel,location,pid,ppid,name,title,url)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO activities (timestamp,system,cpu,email,location,pid,ppid,name,title,url)
+            VALUES(?,?,?,?,?,?,?,?,?,?)
         """, [
         int(time.time()),
         process.cpu(-1),
         cpu,
-        x,
-        y,
-        w,
-        h,
-        repr(utils.get_screen_pixel(x + 4, y + 4)),
+        "",
         process.location(pid),
         pid,
         process.parent_pid(pid),
@@ -93,7 +84,11 @@ def update():
 
 def get_activities():
     cursor = sqlite3.connect(get_activity_path()).cursor()
-    return cursor.execute("SELECT * FROM activities").fetchall()
+    rows = cursor.execute("SELECT * FROM activities").fetchall()
+    print len(rows[0])
+    for n, c in enumerate(rows[0]):
+        print n, c
+    return rows
 
 def generate_report():
     try:
@@ -164,8 +159,8 @@ def generate_pie_chart(output, activities):
     """
     counts = collections.defaultdict(int)
 
-    for timestamp, cpu, app_cpu, x, y, w, h, pixel, location, pid, ppid, app_name, window_title, url, fav in get_activities():
-        counts[(pixel, url or app_name)] += 1
+    for timestamp, cpu, app_cpu, email, location, pid, ppid, app_name, title, url, fav in get_activities():
+        counts[(email, url or "%s + %s" % (app_name, title))] += 1
 
     def format(title):
         return title.encode("utf8")[:32]
@@ -174,9 +169,6 @@ def generate_pie_chart(output, activities):
     data = repr(list(counts.values()))
     html = html_template % {"data": data, "labels": labels}
     output.write(html)
-
-def pixelToColor(pixel):
-    return "rgba(%d,%d,%d,%d)" % eval(pixel) if pixel else "white"
 
 def get_fav(fav, app_name, title):
     if app_name != "Google Chrome":
@@ -197,8 +189,7 @@ def generate_full_table(output, activities):
             <th>When</th>
             <th>CPU</th>
             <th>APP CPU</th>
-            <th>Dimensions</th>
-            <th>Pixel</th>
+            <th>Email</th>
             <th>PID</th>
             <th>Parent PID</th>
             <th>Location</th>
@@ -208,7 +199,7 @@ def generate_full_table(output, activities):
             <th>FavIcon</th>
         </tr>""")
 
-    for timestamp, cpu, app_cpu, x, y, w, h, pixel, location, pid, ppid, app_name, window_title, url, fav in activities:
+    for timestamp, cpu, app_cpu, email, location, pid, ppid, app_name, title, url, fav in activities:
         output.write(u"""
         <tr>
         <td>%s</td>
@@ -222,24 +213,22 @@ def generate_full_table(output, activities):
         <td>%s</td>
         <td>%s</td>
         <td>%s</td>
-        <td>%s</td>
         </tr>
         """ % (
             datetime.datetime.fromtimestamp(timestamp),
             int(cpu * 100),
             int(app_cpu * 100),
-            (x, y, w, h),
-            u'<div style="width:40px; height:40px; background:%s"/>' % pixelToColor(pixel),
+            email,
             pid,
             ppid,
             location,
             app_name,
-            window_title.encode('ascii', 'ignore'),
+            title.encode('ascii', 'ignore'),
             u'<a href=%s>%s</a>' % (
-                get_url(url, app_name, window_title),
-                get_url(url, app_name, window_title),
+                get_url(url, app_name, title),
+                get_url(url, app_name, title),
             ),
-            u'<img src="%s" width=38>' % get_fav(fav, app_name, window_title),
+            u'<img src="%s" width=38>' % get_fav(fav, app_name, title),
         ))
     output.write("</table>")
 

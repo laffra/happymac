@@ -9,6 +9,7 @@ import process
 import psutil
 import Quartz
 from Quartz import CG, CoreGraphics
+import rumps
 import struct
 import time
 import threading
@@ -101,3 +102,16 @@ class Timer(threading.Thread):
                 pass # this is normal
             except Exception as e:
                 log.log("Error in Timer callback '%s': %s" % (self.callback.im_func.__name__, e))
+
+image_cache = {}
+rumps_nsimage_from_file = rumps.rumps._nsimage_from_file
+
+def _nsimage_from_file(path, dimensions=None, template=None):
+    if path in image_cache:
+        return image_cache[path]
+    else:
+        image = rumps_nsimage_from_file(path, None, None)
+        image_cache[path] = image
+        return image
+
+rumps.rumps._nsimage_from_file = _nsimage_from_file

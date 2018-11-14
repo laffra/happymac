@@ -104,8 +104,8 @@ class HappyMacStatusBarApp(rumps.App):
 
     def google(self, menuItem, pid):
         try:
-            webbrowser.open("https://google.com/search?q=Mac process '%s'" % process.name(pid))
-            log.log("Google %s" % process.name(pid))
+            webbrowser.open("https://google.com/search?q=Mac process '%s'" % process.get_name(pid))
+            log.log("Google %s" % process.get_name(pid))
         except:
             error.error("Error in menu callback")
         finally:
@@ -231,6 +231,7 @@ class HappyMacStatusBarApp(rumps.App):
     def handle_action(self, menuItem=None):
         if menuItem:
             log.log("Handled menu item %s" % menuItem)
+        self.update(force_update=True)
 
 
 def run(quit_callback=None):

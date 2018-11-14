@@ -1,22 +1,33 @@
+#pylint: disable=E1101
+#pylint: disable=E0611
+
+import AppKit
+import error
+import Foundation
 import log
 import os
 import psutil
+import rumps
 import time
 import utils
 
 total_times = {}
 cpu_cache = {}
 processes = {}
+password = ""
+internal_processes = set(["sysmond", "launchd", "WindowServer", "kernel_task", "mds_stores"])
 
 def clear_process_cache():
     cpu_cache.clear()
     processes.clear()
 
 def cpu(pid=-1):
+    if pid == 0:
+        return 0
     if pid != -1 and pid in cpu_cache:
         return cpu_cache[pid]
     try:
-        total_time = process_time(pid)
+        total_time = get_total_time(pid)
         now = time.time()
         if not pid in total_times:
             total_times[pid] = (now - 0.01, total_time)
@@ -25,7 +36,16 @@ def cpu(pid=-1):
         total_times[pid] = (now, total_time)
         cpu_cache[pid] = result
         return result
-    except (psutil.AccessDenied, psutil.NoSuchProcess, psutil.ZombieProcess):
+    except psutil.AccessDenied:
+        cmd = ps_output = "???"
+        try:
+            cmd = "ps -p %s -o %%cpu | grep -v CPU" % pid
+            ps_output = os.popen(cmd).read() or "0"
+            return float(ps_output) / 100
+        except:
+            error.error("Cannot parse '%s' => '%s' into a float in process.cpu" % (cmd, ps_output))
+        return 0
+    except (psutil.NoSuchProcess, psutil.ZombieProcess) as e:
         return 0
     except Exception as e:
         log.log("Unhandled Error in process.cpu", e)
@@ -36,13 +56,13 @@ def process(pid):
         processes[pid] = psutil.Process(pid)
     return processes[pid]
 
-def name(pid):
+def get_name(pid):
     return process(pid).name()
 
 def parent_pid(pid):
     return process(pid).ppid()
 
-def process_time(pid):
+def get_total_time(pid):
     times = process(pid).cpu_times() if pid != -1 else psutil.cpu_times()
     return times.user + times.system + getattr(times, "children_user", 0) + getattr(times, "children_system", 0)
 
@@ -84,27 +104,38 @@ def top(exclude, count=5):
             p = process(pid)
             if pid in exclude_pids or pid == my_pid:
                 return None
+            if get_name(pid) in internal_processes:
+                return None
             return p
-        except:
+        except Exception as e:
+            print "Skip process", pid, e
             return None
 
     processes = filter(None, (create_process(pid) for pid in psutil.pids()))
-    return list(reversed(sorted(processes, key=lambda p: -cpu(p.pid))[:5]))
+    return list(reversed(sorted(processes, key=lambda p: -cpu(p.pid))[:count]))
 
 def location(pid):
-    return process(pid).cmdline()[0]
+    try:
+        return process(pid).cmdline()[0]
+    except psutil.AccessDenied:
+        return "<access denied>"
 
 def terminate_process(pid):
     try:
-        process(pid).terminate()
+        return process(pid).terminate()
+    except psutil.AccessDenied:
+        execute_as_root("terminate this process", "kill -TERM %s" % pid)
     except Exception as e:
         log.log("Unhandled Error in process.terminate", e)
 
 def suspend_pid(pid):
     try:
+        raise psutil.AccessDenied()
         process(pid).suspend()
         return True
-    except (psutil.AccessDenied, psutil.NoSuchProcess, psutil.ZombieProcess):
+    except psutil.AccessDenied:
+        return execute_as_root("suspend this process", "kill -STOP %s" % pid)
+    except (psutil.NoSuchProcess, psutil.ZombieProcess):
         pass
     except Exception as e:
         log.log("Unhandled Error in process.suspend", e)
@@ -113,7 +144,30 @@ def resume_pid(pid):
     try:
         process(pid).resume()
         return True
-    except (psutil.AccessDenied, psutil.NoSuchProcess, psutil.ZombieProcess):
+    except psutil.AccessDenied:
+        return execute_as_root("resume this process", "kill -CONT %s" % pid)
+    except (psutil.NoSuchProcess, psutil.ZombieProcess):
         pass
     except Exception as e:
         log.log("Unhandled Error in process.resume", e)
+
+def execute_as_root(description, command):
+    if not AppKit.NSThread.isMainThread():
+        return
+    global password
+    if not password:
+        window = rumps.Window(
+            "Please enter your admin/root password:",
+            "To %s, an admin/root Password is needed by HappyMac." % description,
+            cancel = "Cancel"
+        )
+        window._textfield = AppKit.NSSecureTextField.alloc().initWithFrame_(Foundation.NSMakeRect(0, 0, 200, 25))
+        window._alert.setAccessoryView_(window._textfield)
+        response = window.run()
+        if response.clicked:
+            password = response.text
+    if password:
+        result = os.popen('echo "%s" | sudo -S %s' % (password, command)).read()
+        log.log("Ran as root: %s  => %s" % (command, result))
+        return result or True
+    return ""

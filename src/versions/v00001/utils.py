@@ -3,6 +3,7 @@
 
 import AppKit
 import collections
+import error
 import log
 import os
 import process
@@ -101,7 +102,7 @@ class Timer(threading.Thread):
             except psutil.NoSuchProcess:
                 pass # this is normal
             except Exception as e:
-                log.log("Error in Timer callback '%s': %s" % (self.callback.im_func.__name__, e))
+                error.error("Error in Timer callback '%s': %s" % (self.callback.im_func.__name__, e))
 
 image_cache = {}
 rumps_nsimage_from_file = rumps.rumps._nsimage_from_file

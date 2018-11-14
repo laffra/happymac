@@ -40,10 +40,9 @@ TITLE_AUTO_SUSPEND = "Auto Suspend"
 TITLE_GOOGLE = "Google this..."
 
 TITLE_PREFERENCES = "Preferences"
-TITLE_JUST_EMOJI = "Show just an emoji"
-TITLE_EMOJI_AND_NAME = "Show emoji and name"
+TITLE_SHOW_NAME_IN_STATUSBAR = "Show name in Statusbar"
 
-KEY_ICON_DETAILS = 'icon_details'
+KEY_SHOW_NAME_IN_STATUSBAR = 'show_name_in_statusbar'
 
 LAUNCHD_PID = 1
 IDLE_PROCESS_PERCENT_CPU = 3
@@ -57,22 +56,18 @@ class HappyMacStatusBarApp(rumps.App):
         self.menu = []
         self.create_menu()
         self.start = time.time()
-        self.menu_open = False
+        self.menu_is_open = False
         server.start_server()
-        utils.Timer(2, self.update).start()
+        utils.Timer(0.25, self.update).start()
+        self.update_skip_counter = 8
         log.log("Started HappyMac %s" % version_manager.last_version())
 
-    def show_emoji(self, menuItem=None):
+    def toggle_name_in_statusbar(self, menuItem=None):
         try:
-            preferences.set(KEY_ICON_DETAILS, TITLE_JUST_EMOJI)
-        except:
-            error.error("Error in menu callback")
-        finally:
-            self.handle_action()
-
-    def show_emoji_and_name(self, menuItem=None):
-        try:
-            preferences.set(KEY_ICON_DETAILS, TITLE_EMOJI_AND_NAME)
+            value = preferences.get(KEY_SHOW_NAME_IN_STATUSBAR, False)
+            preferences.set(KEY_SHOW_NAME_IN_STATUSBAR, not value)
+            self.name_in_statusbar.state = not value
+            self.create_menu()
         except:
             error.error("Error in menu callback")
         finally:
@@ -105,7 +100,7 @@ class HappyMacStatusBarApp(rumps.App):
     def google(self, menuItem, pid):
         try:
             webbrowser.open("https://google.com/search?q=Mac process '%s'" % process.get_name(pid))
-            log.log("Google %s" % process.get_name(pid))
+            log.log("Google process %d (%s)" % (pid, process.get_name(pid)))
         except:
             error.error("Error in menu callback")
         finally:
@@ -146,16 +141,16 @@ class HappyMacStatusBarApp(rumps.App):
     def create_menu(self):
         title = utils.get_current_app_short_name()
         self.icon = ICONS[0]
-        self.title = title if preferences.get('icon_details') == TITLE_EMOJI_AND_NAME else ""
+        show_name = preferences.get(KEY_SHOW_NAME_IN_STATUSBAR, False)
+        self.title = title if show_name else ""
         self.last_title = title
         self.menu.clear()
+        self.name_in_statusbar = rumps.MenuItem(TITLE_SHOW_NAME_IN_STATUSBAR, callback=self.toggle_name_in_statusbar)
+        self.name_in_statusbar.state = show_name
         self.menu = [
             rumps.MenuItem(TITLE_ABOUT % self.version(), callback=self.about),
             None,
-            {TITLE_PREFERENCES: [
-                rumps.MenuItem(TITLE_JUST_EMOJI, callback=self.show_emoji),
-                rumps.MenuItem(TITLE_EMOJI_AND_NAME, callback=self.show_emoji_and_name),
-            ]},
+            self.name_in_statusbar,
             None,
             rumps.MenuItem(TITLE_CURRENT_PROCESSES),
             None,
@@ -170,19 +165,20 @@ class HappyMacStatusBarApp(rumps.App):
         self.menu._menu.setDelegate_(self)
 
     def menuWillOpen_(self, menu):
-        self.menu_open = True
+        self.menu_is_open = True
+        self.update_skip_counter = 0
 
     def menuDidClose_(self, menu):
-        self.menu_open = False
+        self.menu_is_open = False
+
+    def update_statusbar(self):
+        title = utils.get_current_app_short_name()
+        percent = process.cpu_percent()
+        self.icon = self.get_icon(percent) if title == self.last_title else ICONS[0]
+        self.title = title if preferences.get(KEY_SHOW_NAME_IN_STATUSBAR, False) else ""
+        self.last_title = title
 
     def update_menu(self, foreground_tasks, background_tasks, suspended_tasks, force_update=False):
-        title = utils.get_current_app_short_name()
-        percent = int(100 * sum(process.cpu(task.pid) for task in foreground_tasks) + process.cpu(-1) * 25)
-        self.icon = self.get_icon(percent) if title == self.last_title else ICONS[0]
-        self.title = title if preferences.get('icon_details') == TITLE_EMOJI_AND_NAME else ""
-        self.last_title = title
-        if not self.menu_open or self.menu_is_highlighted() and not force_update:
-            return
         foreground_menu_items = filter(None, map(self.menu_item_for_process, foreground_tasks))
         background_menu_items = filter(None, map(functools.partial(self.menu_item_for_process, suspendable=True), background_tasks))
         suspended_menu_items = filter(None, map(functools.partial(self.menu_item_for_process, resumable=True), suspended_tasks))
@@ -197,15 +193,22 @@ class HappyMacStatusBarApp(rumps.App):
             self.menu.insert_after(TITLE_SUSPENDED_PROCESSES, item)
 
     def update(self, force_update=False):
+        if not force_update and self.update_skip_counter > 0:
+            self.update_skip_counter -= 1
+            return
+        self.update_skip_counter = 8
         process.clear_process_cache()
         utils.clear_windows_cache()
-        foreground_tasks = process.family(utils.get_current_app_pid())
-        background_tasks = process.top(exclude=foreground_tasks)
-        self.update_menu(foreground_tasks, background_tasks, suspender.get_suspended_tasks(), force_update)
-        suspender.manage(foreground_tasks, background_tasks)
         activity.update_activities()
-        # check for memory leaks:
-        # log.log("MenuItem count: %d" % len([obj for obj in gc.get_objects() if type(obj) == rumps.MenuItem]))
+        self.update_statusbar()
+        percent = process.cpu_percent()
+        if force_update or percent > 25 or self.menu_is_open:
+            foreground_tasks = process.family(utils.get_current_app_pid())
+            background_tasks = process.top(exclude=foreground_tasks)
+            suspender.manage(foreground_tasks, background_tasks)
+            suspended_tasks = suspender.get_suspended_tasks()
+            if force_update or not self.menu_is_highlighted():
+                self.update_menu(foreground_tasks, background_tasks, suspended_tasks, force_update)
 
     def menu_is_highlighted(self):
         return self.menu._menu.highlightedItem()

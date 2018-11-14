@@ -15,28 +15,34 @@ total_times = {}
 cpu_cache = {}
 processes = {}
 password = ""
-internal_processes = set(["sysmond", "launchd", "WindowServer", "kernel_task", "mds_stores"])
+internal_processes = set(["sysmond", "launchd", "WindowServer", "kernel_task", "mds_stores", "last"])
 
 def clear_process_cache():
     cpu_cache.clear()
     processes.clear()
 
+def cpu_percent():
+    if -1 in cpu_cache:
+        return cpu_cache[-1]
+    cpu_cache[-1] = percent = psutil.cpu_percent()
+    return percent
+
 def cpu(pid=-1):
     if pid == 0:
         return 0
-    if pid != -1 and pid in cpu_cache:
+    if pid in cpu_cache:
         return cpu_cache[pid]
     try:
         total_time = get_total_time(pid)
         now = time.time()
         if not pid in total_times:
-            total_times[pid] = (now - 0.01, total_time)
+            total_times[pid] = (now, total_time)
         last_when, last_time = total_times[pid]
-        result = (total_time - last_time) / (now - last_when)
+        result = (total_time - last_time) / (now - last_when + 0.00001)
         total_times[pid] = (now, total_time)
         cpu_cache[pid] = result
         return result
-    except psutil.AccessDenied:
+    except psutil.AccessDenied as e:
         cmd = ps_output = "???"
         try:
             cmd = "ps -p %s -o %%cpu | grep -v CPU" % pid
@@ -108,7 +114,6 @@ def top(exclude, count=5):
                 return None
             return p
         except Exception as e:
-            print "Skip process", pid, e
             return None
 
     processes = filter(None, (create_process(pid) for pid in psutil.pids()))
@@ -121,30 +126,36 @@ def location(pid):
         return "<access denied>"
 
 def terminate_process(pid):
+    if pid < 2:
+        return
     try:
         return process(pid).terminate()
     except psutil.AccessDenied:
-        execute_as_root("terminate this process", "kill -TERM %s" % pid)
+        execute_as_root("terminate process %d (%s)" % (pid, get_name(pid)), "kill -TERM %s" % pid)
     except Exception as e:
         log.log("Unhandled Error in process.terminate", e)
 
 def suspend_pid(pid):
+    if pid < 2:
+        return
     try:
         process(pid).suspend()
         return True
     except psutil.AccessDenied:
-        return execute_as_root("suspend this process", "kill -STOP %s" % pid)
+        return execute_as_root("suspend process %d (%s)" % (pid, get_name(pid)), "kill -STOP %s" % pid)
     except (psutil.NoSuchProcess, psutil.ZombieProcess):
         pass
     except Exception as e:
         log.log("Unhandled Error in process.suspend", e)
 
 def resume_pid(pid):
+    if pid < 2:
+        return
     try:
         process(pid).resume()
         return True
     except psutil.AccessDenied:
-        return execute_as_root("resume this process", "kill -CONT %s" % pid)
+        return execute_as_root("resume process %d (%s)" % (pid, get_name(pid)), "kill -CONT %s" % pid)
     except (psutil.NoSuchProcess, psutil.ZombieProcess):
         pass
     except Exception as e:
@@ -157,8 +168,8 @@ def execute_as_root(description, command):
             # Cannot show a dialogue on a background thread
             return
         window = rumps.Window(
-            "Please enter your admin/root password:",
-            "To %s, an admin/root Password is needed by HappyMac." % description,
+            "Please enter your admin or root password:",
+            "To %s, an admin or root Password is needed by HappyMac." % description,
             cancel = "Cancel"
         )
         window._textfield = AppKit.NSSecureTextField.alloc().initWithFrame_(Foundation.NSMakeRect(0, 0, 200, 25))

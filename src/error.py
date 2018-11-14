@@ -89,5 +89,5 @@ def error(message):
             print input.read()
     except:
         pass
-    print "For details see: %s" % path
+    log.log(error)
     rumps.notification("HappyMac", "Error: %s. For details see:" % message, path, sound=True)

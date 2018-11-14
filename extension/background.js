@@ -1,3 +1,6 @@
+var last_email = "";
+var last_url = "";
+
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
   chrome.identity.getProfileUserInfo(function (userInfo) {
     updateTab(userInfo.email, tab);
@@ -13,6 +16,11 @@ chrome.tabs.onActivated.addListener(function(activeInfo) {
 });
 
 function updateTab(email, tab) {
+  if (last_email === email && last_url === tab.url) {
+    return
+  }
+  last_email = email;
+  last_url = tab.url;
   var port_number = 1187;
   while (port_number < 1287) {
     try {

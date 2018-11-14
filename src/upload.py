@@ -24,8 +24,11 @@ for name in names:
             item = getattr(mod, key)
             if inspect.isfunction(item):
                 func_name = item.__name__
+                if func_name[0] == "_":
+                    continue
                 source = source.replace("%s(" % func_name, "_%s__%s(" % (shorten(name), shorten(func_name)))
                 source = source.replace("map(%s," % func_name, "map(_%s__%s," % (shorten(name), shorten(func_name)))
+                source = source.replace(" = %s" % func_name, " = _%s__%s" % (shorten(name), shorten(func_name)))
     contents += source + "\n"
 
 for name in names:
@@ -37,6 +40,8 @@ for name in names:
         item = getattr(mod, key)
         if inspect.isfunction(item):
             func_name = item.__name__
+            if func_name[0] == "_":
+                continue
             contents = contents.replace("def %s(" % func_name, "def _%s__%s(" % (shorten(name), shorten(func_name)))
             contents = contents.replace("%s.%s(" % (name, func_name), "_%s__%s(" % (shorten(name), shorten(func_name)))
         if name == "utils" and inspect.isclass(item):

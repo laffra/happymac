@@ -21,7 +21,7 @@ def clear_process_cache():
     cpu_cache.clear()
     processes.clear()
 
-def cpu_percent():
+def get_cpu_percent():
     if -1 in cpu_cache:
         return cpu_cache[-1]
     cpu_cache[-1] = percent = psutil.cpu_percent()

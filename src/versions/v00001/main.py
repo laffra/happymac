@@ -39,9 +39,7 @@ TITLE_SUSPEND = "Suspend Now"
 TITLE_AUTO_SUSPEND = "Auto Suspend"
 TITLE_GOOGLE = "Google this..."
 
-TITLE_PREFERENCES = "Preferences"
 TITLE_SHOW_NAME_IN_STATUSBAR = "Show name in Statusbar"
-
 KEY_SHOW_NAME_IN_STATUSBAR = 'show_name_in_statusbar'
 
 LAUNCHD_PID = 1
@@ -173,7 +171,7 @@ class HappyMacStatusBarApp(rumps.App):
 
     def update_statusbar(self):
         title = utils.get_current_app_short_name()
-        percent = process.cpu_percent()
+        percent = process.get_cpu_percent()
         self.icon = self.get_icon(percent) if title == self.last_title else ICONS[0]
         self.title = title if preferences.get(KEY_SHOW_NAME_IN_STATUSBAR, False) else ""
         self.last_title = title
@@ -201,7 +199,7 @@ class HappyMacStatusBarApp(rumps.App):
         utils.clear_windows_cache()
         activity.update_activities()
         self.update_statusbar()
-        percent = process.cpu_percent()
+        percent = process.get_cpu_percent()
         if force_update or percent > 25 or self.menu_is_open:
             foreground_tasks = process.family(utils.get_current_app_pid())
             background_tasks = process.top(exclude=foreground_tasks)

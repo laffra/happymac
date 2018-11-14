@@ -130,7 +130,6 @@ def terminate_process(pid):
 
 def suspend_pid(pid):
     try:
-        raise psutil.AccessDenied()
         process(pid).suspend()
         return True
     except psutil.AccessDenied:
@@ -152,10 +151,11 @@ def resume_pid(pid):
         log.log("Unhandled Error in process.resume", e)
 
 def execute_as_root(description, command):
-    if not AppKit.NSThread.isMainThread():
-        return
     global password
     if not password:
+        if not AppKit.NSThread.isMainThread():
+            # Cannot show a dialogue on a background thread
+            return
         window = rumps.Window(
             "Please enter your admin/root password:",
             "To %s, an admin/root Password is needed by HappyMac." % description,

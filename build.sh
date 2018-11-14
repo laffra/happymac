@@ -3,6 +3,9 @@ rm -rf ~/HappyMacApp build dist
 RED='\x1B[0;31m'
 NC='\x1B[0m'
 
+echo -e "${RED}0. Probably need a new version?${NC}"
+python src/upload.py
+
 echo -e "${RED}1. run pyinstaller - this takes 15 seconds...${NC}"
 cp app/pyinstaller.spec .
 pyinstaller --onefile --windowed --osx-bundle-identifier com.chrislaffra.osx.happymac pyinstaller.spec 2>&1 | grep ERROR
@@ -28,9 +31,6 @@ echo -e "${RED}6. code sign dmg${NC}"
 codesign -v -f -i com.chrislaffra.osx.happymac -s "Developer ID Application: LAFFRA JOHANNES (29P9D64BXJ)" dist/happymac.dmg
 ls -l dist
 
-echo -e "${RED}7. Probably need a new version?${NC}"
-python src/upload.py
-
-echo -e "${RED}8. done building${NC}"
-echo -e "${RED}9. Final step: open dist/happymac.dmg"
+echo -e "${RED}7. done building${NC}"
+echo -e "${RED}8. Final step: open dist/happymac.dmg"
 open dist/happymac.dmg

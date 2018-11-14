@@ -129,7 +129,7 @@ class HappyMacStatusBarApp(rumps.App):
         if p.pid != utils.get_current_app_pid() and not resumable and percent < IDLE_PROCESS_PERCENT_CPU:
             return None
         item = rumps.MenuItem("%s - %d%%" % (name, percent))
-        item.icon = self.getIcon(percent)
+        item.icon = self.get_icon(percent)
         item.percent = percent
         item.pid = p.pid
         item.add(rumps.MenuItem(TITLE_GOOGLE, callback=functools.partial(self.google, pid=p.pid)))
@@ -178,7 +178,7 @@ class HappyMacStatusBarApp(rumps.App):
     def update_menu(self, foreground_tasks, background_tasks, suspended_tasks, force_update=False):
         title = utils.get_current_app_short_name()
         percent = int(100 * sum(process.cpu(task.pid) for task in foreground_tasks) + process.cpu(-1) * 25)
-        self.icon = self.getIcon(percent) if title == self.last_title else ICONS[0]
+        self.icon = self.get_icon(percent) if title == self.last_title else ICONS[0]
         self.title = title if preferences.get('icon_details') == TITLE_EMOJI_AND_NAME else ""
         self.last_title = title
         if not self.menu_open or self.menu_is_highlighted() and not force_update:
@@ -221,7 +221,7 @@ class HappyMacStatusBarApp(rumps.App):
         finally:
             rumps.quit_application()
 
-    def getIcon(self, percent):
+    def get_icon(self, percent):
         iconIndex = 0 if not percent else max(0, min(len(ICONS) - 1, int(percent * len(ICONS) / 100.0)))
         return ICONS[iconIndex]
 

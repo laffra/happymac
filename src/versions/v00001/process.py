@@ -123,6 +123,7 @@ def top(exclude, count=5):
     my_pid = os.getpid()
     exclude_pids = set(p.pid for p in exclude)
     def create_process(pid):
+        global login_pid
         try:
             name = get_name(pid)
             if name == "login":

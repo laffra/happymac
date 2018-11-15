@@ -7,6 +7,7 @@ import Foundation
 import log
 import os
 import psutil
+import re
 import rumps
 import time
 import utils
@@ -15,7 +16,15 @@ total_times = {}
 cpu_cache = {}
 processes = {}
 password = ""
-internal_processes = set(["sysmond", "launchd", "WindowServer", "kernel_task", "mds_stores", "last"])
+system_processes = set([
+    "sysmond",
+    "launchd",
+    "WindowServer",
+    "kernel_task",
+    "mds_stores",
+    "last"
+])
+login_pid = 0
 
 def clear_process_cache():
     cpu_cache.clear()
@@ -62,8 +71,15 @@ def get_process(pid):
         processes[pid] = psutil.Process(pid)
     return processes[pid]
 
+def is_system_process(pid):
+    return pid <= login_pid or get_name(pid) in system_processes
+
 def get_name(pid):
-    return get_process(pid).name()
+    name = get_process(pid).name()
+    if len(name) == 16:
+        # psutil truncates names to 16 characters
+        name = location(pid).split("/")[-1]
+    return name
 
 def parent_pid(pid):
     return get_process(pid).ppid()
@@ -103,17 +119,18 @@ def details(pid):
     )
 
 def top(exclude, count=5):
+    global login_pid
     my_pid = os.getpid()
     exclude_pids = set(p.pid for p in exclude)
     def create_process(pid):
         try:
-            p = get_process(pid)
-            if pid in exclude_pids or pid == my_pid:
+            name = get_name(pid)
+            if name == "login":
+                login_pid = pid
+            if pid in exclude_pids or pid == my_pid or name == "last":
                 return None
-            if get_name(pid) in internal_processes:
-                return None
-            return p
-        except Exception as e:
+            return get_process(pid)
+        except:
             return None
 
     processes = filter(None, (create_process(pid) for pid in psutil.pids()))
@@ -121,22 +138,39 @@ def top(exclude, count=5):
 
 def location(pid):
     try:
-        return get_process(pid).cmdline()[0]
+        path = get_process(pid).cmdline()[0]
     except psutil.AccessDenied:
-        return "<access denied>"
-
-def terminate_process(pid):
-    if pid < 2:
-        return
+        path = os.popen("ps %d" % pid).read()
     try:
+        return re.sub(r".*[0-9] (/[^-]*)(-)?", r"\1", path).strip()
+    except Exception as e:
+        return "daemon-%d-%s" % (pid, e)
+
+def terminate_pid(pid):
+    try:
+        name = get_name(pid)
+        if is_system_process(pid):
+            rumps.alert("Terminate Canceled", "This looks like a critical process that should not be terminated.")
+            return
+        title = "Are you sure you want to terminate process %s (%s)?" % (pid, name)
+        message = ("Terminating this process could lead to data loss.\n\n" +
+                "If this is a system process, it may just get restarted. " +
+                "In the worst case, you could lock up your machine.\n\n" +
+                "We suggest you suspend the process, not terminate it.")
+        if not rumps.alert(title, message, ok="Terminate, I know what I am doing", cancel="Cancel"):
+            log.log("User canceled termination of process %d (%s)" % (pid, name))
+            return
         return get_process(pid).terminate()
     except psutil.AccessDenied:
         execute_as_root("terminate process %d (%s)" % (pid, get_name(pid)), "kill -TERM %s" % pid)
+    except (psutil.NoSuchProcess, psutil.ZombieProcess):
+        pass
     except Exception as e:
         log.log("Unhandled Error in process.terminate", e)
 
 def suspend_pid(pid):
-    if pid < 2:
+    if is_system_process(pid):
+        rumps.alert("Terminate Canceled", "This looks like a critical process that should not be suspended.")
         return
     try:
         get_process(pid).suspend()
@@ -144,12 +178,12 @@ def suspend_pid(pid):
     except psutil.AccessDenied:
         return execute_as_root("suspend process %d (%s)" % (pid, get_name(pid)), "kill -STOP %s" % pid)
     except (psutil.NoSuchProcess, psutil.ZombieProcess):
-        pass
+        return True
     except Exception as e:
         log.log("Unhandled Error in process.suspend", e)
 
 def resume_pid(pid):
-    if pid < 2:
+    if is_system_process(pid):
         return
     try:
         get_process(pid).resume()
@@ -157,7 +191,8 @@ def resume_pid(pid):
     except psutil.AccessDenied:
         return execute_as_root("resume process %d (%s)" % (pid, get_name(pid)), "kill -CONT %s" % pid)
     except (psutil.NoSuchProcess, psutil.ZombieProcess):
-        pass
+        log.log("Could not resume zombie process %d (%s)" % (pid, get_name(pid)))
+        return True
     except Exception as e:
         log.log("Unhandled Error in process.resume", e)
 

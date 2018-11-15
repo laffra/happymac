@@ -36,8 +36,8 @@ def get_suspend_preference(pid):
     return preferences.get("suspend - %s" % process.get_name(pid))
 
 def get_suspended_tasks():
-    return [process.get_process(pid) for pid,name in suspended_tasks]
+    return [process.get_process(pid) for pid,_ in suspended_tasks]
 
 def exit():
-    for pid,name in suspended_tasks:
+    for pid,_ in suspended_tasks:
         process.resume_pid(pid)

@@ -33,17 +33,18 @@ TITLE_OTHER_PROCESSES = "Background Tasks:"
 TITLE_SUSPENDED_PROCESSES = "Suspended Background Tasks:"
 
 TITLE_TERMINATE = "Terminate"
-TITLE_RESUME_AND_NEVER_SUSPEND = "Never Suspend"
-TITLE_RESUME = "Resume Now"
-TITLE_SUSPEND = "Suspend Now"
-TITLE_AUTO_SUSPEND = "Auto Suspend"
+TITLE_RESUME = "Resume"
+TITLE_SUSPEND = "Suspend"
 TITLE_GOOGLE = "Google this..."
+TITLE_GOOGLE_SYSTEM = "Google this system process..."
 
 TITLE_SHOW_NAME_IN_STATUSBAR = "Show name in Statusbar"
 KEY_SHOW_NAME_IN_STATUSBAR = 'show_name_in_statusbar'
 
 LAUNCHD_PID = 1
 IDLE_PROCESS_PERCENT_CPU = 3
+
+running_local = not getattr(sys, "_MEIPASS", False)
 
 class HappyMacStatusBarApp(rumps.App):
     def __init__(self, quit_callback=None):
@@ -73,23 +74,23 @@ class HappyMacStatusBarApp(rumps.App):
 
     def terminate(self, menuItem, pid):
         try:
-            process.terminate_process(pid)
+            process.terminate_pid(pid)
         except:
             error.error("Error in menu callback")
         finally:
             self.handle_action()
 
-    def resume(self, menuItem, pid, auto=False):
+    def resume(self, menuItem, pid):
         try:
-            suspender.resume_process(pid, manual=True, auto=auto)
+            suspender.resume_process(pid, manual=True)
         except:
             error.error("Error in menu callback")
         finally:
             self.handle_action()
 
-    def suspend(self, menuItem, pid, auto=False):
+    def suspend(self, menuItem, pid):
         try:
-            suspender.suspend_process(pid, manual=True, auto=auto)
+            suspender.suspend_process(pid, manual=True)
         except:
             error.error("Error in menu callback")
         finally:
@@ -116,7 +117,7 @@ class HappyMacStatusBarApp(rumps.App):
         return version_manager.last_version()
 
     def menu_item_for_process(self, p, resumable=False, suspendable=False):
-        name = p.name()
+        name = process.get_name(p.pid)
         cpu = process.cpu(p.pid)
         percent = max(0 if resumable else 1, int(100 * cpu))
         if p.pid != utils.get_current_app_pid() and not resumable and percent < IDLE_PROCESS_PERCENT_CPU:
@@ -126,11 +127,8 @@ class HappyMacStatusBarApp(rumps.App):
         item.percent = percent
         item.pid = p.pid
         item.add(rumps.MenuItem(TITLE_GOOGLE, callback=functools.partial(self.google, pid=p.pid)))
-        if suspendable:
-            item.add(rumps.MenuItem(TITLE_AUTO_SUSPEND, callback=functools.partial(self.suspend, auto=True, pid=p.pid)))
         if resumable:
             item.add(rumps.MenuItem(TITLE_RESUME, callback=functools.partial(self.resume, pid=p.pid)))
-            item.add(rumps.MenuItem(TITLE_RESUME_AND_NEVER_SUSPEND, callback=functools.partial(self.resume, auto=True, pid=p.pid)))
         else:
             item.add(rumps.MenuItem(TITLE_SUSPEND, callback=functools.partial(self.suspend, pid=p.pid)))
         item.add(rumps.MenuItem(TITLE_TERMINATE, callback=functools.partial(self.terminate, pid=p.pid)))
@@ -145,6 +143,7 @@ class HappyMacStatusBarApp(rumps.App):
         self.menu.clear()
         self.name_in_statusbar = rumps.MenuItem(TITLE_SHOW_NAME_IN_STATUSBAR, callback=self.toggle_name_in_statusbar)
         self.name_in_statusbar.state = show_name
+        report = [rumps.MenuItem(TITLE_REPORT, callback=self.report), None] if running_local else []
         self.menu = [
             rumps.MenuItem(TITLE_ABOUT % self.version(), callback=self.about),
             None,
@@ -156,8 +155,7 @@ class HappyMacStatusBarApp(rumps.App):
             None,
             rumps.MenuItem(TITLE_SUSPENDED_PROCESSES),
             None,
-            rumps.MenuItem(TITLE_REPORT, callback=self.report),
-            None,
+        ] + report + [
             rumps.MenuItem(TITLE_QUIT, callback=self.quit),
         ]
         self.menu._menu.setDelegate_(self)
@@ -223,7 +221,7 @@ class HappyMacStatusBarApp(rumps.App):
             rumps.quit_application()
 
     def get_icon(self, percent):
-        iconIndex = 0 if not percent else max(0, min(len(ICONS) - 1, int(percent * len(ICONS) / 100.0)))
+        iconIndex = 0 if not percent else max(0, min(len(ICONS) - 1, int(percent * len(ICONS) / 70.0)))
         return ICONS[iconIndex]
 
     def about(self, menuItem=None):

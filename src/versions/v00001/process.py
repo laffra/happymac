@@ -57,35 +57,35 @@ def cpu(pid=-1):
         log.log("Unhandled Error in process.cpu", e)
         return 0
 
-def process(pid):
+def get_process(pid):
     if not pid in processes:
         processes[pid] = psutil.Process(pid)
     return processes[pid]
 
 def get_name(pid):
-    return process(pid).name()
+    return get_process(pid).name()
 
 def parent_pid(pid):
-    return process(pid).ppid()
+    return get_process(pid).ppid()
 
 def get_total_time(pid):
-    times = process(pid).cpu_times() if pid != -1 else psutil.cpu_times()
+    times = get_process(pid).cpu_times() if pid != -1 else psutil.cpu_times()
     return times.user + times.system + getattr(times, "children_user", 0) + getattr(times, "children_system", 0)
 
 def child_processes(pid, includeSelf=True):
-    kids = process(pid).children()
+    kids = get_process(pid).children()
     for grandkid in kids:
         kids.extend(child_processes(grandkid.pid, False))
     if includeSelf:
-        kids.append(process(pid))
+        kids.append(get_process(pid))
     return sorted(set(kids), key=lambda p: cpu(p.pid))
 
 def parents(pid, includeSelf=True):
     processes = []
-    p = process(pid if includeSelf else parent_pid(pid))
+    p = get_process(pid if includeSelf else parent_pid(pid))
     while p.pid:
         processes.append(p)
-        p = process(parent_pid(p.pid))
+        p = get_process(parent_pid(p.pid))
     return sorted(set(processes), key=lambda p: cpu(p.pid))
 
 def family(pid):
@@ -95,7 +95,7 @@ def family_cpu_usage(pid):
     return sum(map(cpu, [p.pid for p in family(pid)]))
 
 def details(pid):
-    p = process(pid)
+    p = get_process(pid)
     return "%s - %s - %s\n" % (
         p.cwd(),
         p.connections(),
@@ -107,7 +107,7 @@ def top(exclude, count=5):
     exclude_pids = set(p.pid for p in exclude)
     def create_process(pid):
         try:
-            p = process(pid)
+            p = get_process(pid)
             if pid in exclude_pids or pid == my_pid:
                 return None
             if get_name(pid) in internal_processes:
@@ -121,7 +121,7 @@ def top(exclude, count=5):
 
 def location(pid):
     try:
-        return process(pid).cmdline()[0]
+        return get_process(pid).cmdline()[0]
     except psutil.AccessDenied:
         return "<access denied>"
 
@@ -129,7 +129,7 @@ def terminate_process(pid):
     if pid < 2:
         return
     try:
-        return process(pid).terminate()
+        return get_process(pid).terminate()
     except psutil.AccessDenied:
         execute_as_root("terminate process %d (%s)" % (pid, get_name(pid)), "kill -TERM %s" % pid)
     except Exception as e:
@@ -139,7 +139,7 @@ def suspend_pid(pid):
     if pid < 2:
         return
     try:
-        process(pid).suspend()
+        get_process(pid).suspend()
         return True
     except psutil.AccessDenied:
         return execute_as_root("suspend process %d (%s)" % (pid, get_name(pid)), "kill -STOP %s" % pid)
@@ -152,7 +152,7 @@ def resume_pid(pid):
     if pid < 2:
         return
     try:
-        process(pid).resume()
+        get_process(pid).resume()
         return True
     except psutil.AccessDenied:
         return execute_as_root("resume process %d (%s)" % (pid, get_name(pid)), "kill -CONT %s" % pid)

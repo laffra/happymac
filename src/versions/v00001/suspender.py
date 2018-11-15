@@ -58,7 +58,7 @@ def increase_resource_hog_count(pid):
     preferences.set("rhc__%s" % pid, 10 * current_count)
 
 def get_suspended_tasks():
-    return [process.process(pid) for pid in suspended_tasks]
+    return [process.get_process(pid) for pid in suspended_tasks]
 
 def exit():
     for pid in suspended_tasks:

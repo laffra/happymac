@@ -277,5 +277,16 @@ def generate_full_table(output, activities):
         ))
     output.write("</table>")
 
+def setup():
+    sqlite3.connect(get_activity_path()).cursor().execute(INIT_QUERY)
 
-sqlite3.connect(get_activity_path()).cursor().execute(INIT_QUERY)
+try:
+    setup()
+except Exception as e:
+    log.log("Cannot open activity database: %s. Retrying..." % e)
+    path = get_activity_path()
+    os.system("mv %s %s.%s" % (path, path, time.time()))
+    try:
+        setup()
+    except:
+        error.error("Cannot initialize activities.")

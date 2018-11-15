@@ -24,9 +24,20 @@ INIT_QUERY = """CREATE TABLE IF NOT EXISTS activities (
     title text,
     url text,
     fav text
-)"""
+) """
+
+INDEX_TIMESTAMP = 0
+INDEX_SYSTEM = 1
+INDEX_CPU = 2
 INDEX_EMAIL = 3
+INDEX_LOCATION = 4
+INDEX_PID = 5
+INDEX_PPID = 6
+INDEX_APP_NAME = 7
 INDEX_TITLE = 8
+INDEX_URL = 9
+INDEX_FAV = 10
+
 HOUR_IN_MS = 3600 * 1000000
 
 home_dir = os.path.join(os.path.expanduser("~"), "HappyMacApp")
@@ -177,8 +188,8 @@ def generate_pie_chart(output, pie_email, activities):
     log.log("Generate pie chart for %d rows for email '%s'" % (len(activities), pie_email))
     counts = collections.defaultdict(int)
 
-    for timestamp, cpu, app_cpu, email, location, pid, ppid, app_name, title, url, fav in activities:
-        counts[url or "%s + %s" % (app_name, title)] += 1
+    for row in activities:
+        counts[row[INDEX_URL] or "%s + %s" % (row[INDEX_APP_NAME], row[INDEX_TITLE])] += 1
 
     labels = repr([title.encode("utf8")[:32] for title in counts.keys()])
     data = list(counts.values())

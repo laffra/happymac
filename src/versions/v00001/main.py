@@ -17,12 +17,12 @@ import utils
 import version_manager
 import webbrowser
 
-resource_path = getattr(sys, "_MEIPASS", os.path.abspath("."))
+RESOURCE_PATH = getattr(sys, "_MEIPASS", os.path.abspath("."))
 ICONS = [
-    os.path.join(resource_path, "icons/happy.png"),
-    os.path.join(resource_path, "icons/frown.png"),
-    os.path.join(resource_path, "icons/sweating.png"),
-    os.path.join(resource_path, "icons/burn.png"),
+    os.path.join(RESOURCE_PATH, "icons/happy.png"),
+    os.path.join(RESOURCE_PATH, "icons/frown.png"),
+    os.path.join(RESOURCE_PATH, "icons/sweating.png"),
+    os.path.join(RESOURCE_PATH, "icons/burn.png"),
 ]
 
 TITLE_QUIT = "Quit HappyMac"
@@ -33,8 +33,8 @@ TITLE_OTHER_PROCESSES = "Background Tasks:"
 TITLE_SUSPENDED_PROCESSES = "Suspended Background Tasks:"
 
 TITLE_TERMINATE = "Terminate"
-TITLE_RESUME = "Resume Now"
 TITLE_RESUME_AND_NEVER_SUSPEND = "Never Suspend"
+TITLE_RESUME = "Resume Now"
 TITLE_SUSPEND = "Suspend Now"
 TITLE_AUTO_SUSPEND = "Auto Suspend"
 TITLE_GOOGLE = "Google this..."

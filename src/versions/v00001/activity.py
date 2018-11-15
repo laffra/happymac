@@ -25,6 +25,8 @@ INIT_QUERY = """CREATE TABLE IF NOT EXISTS activities (
     url text,
     fav text
 )"""
+INDEX_EMAIL = 3
+INDEX_TITLE = 8
 HOUR_IN_MS = 3600 * 1000000
 
 home_dir = os.path.join(os.path.expanduser("~"), "HappyMacApp")
@@ -42,18 +44,18 @@ def get_report_path():
     return os.path.join(reports_dir, "report_%s.html" % datetime.datetime.utcnow())
 
 def update_tab(email, url, fav, title):
-    since_when = int(time.time()) - HOUR_IN_MS
     connection = sqlite3.connect(get_activity_path())
     cursor = connection.cursor()
     cursor.execute('''
             UPDATE activities SET email = "%s", url = "%s", fav = "%s"
-            WHERE TITLE = "%s" AND name = "Google Chrome" AND timestamp > ?
-        ''' % (email, url, fav, title),
-        (since_when,)
+            WHERE  email = "no@email" AND title = "%s" AND name = "Google Chrome"
+        ''' % (email, url, fav, title)
     )
     connection.commit()
     title_details[title] = (url, fav)
-    log.log("New tab: %s %s" % (email, url))
+    log.log("New tab: %s %s %s" % (email, url, title))
+    for row in cursor.execute('SELECT * FROM activities WHERE  title = "%s" AND name = "Google Chrome"' % title).fetchall():
+        print row[INDEX_EMAIL], row[INDEX_TITLE]
 
 def update_activities():
     pid = utils.get_current_app_pid()
@@ -72,7 +74,7 @@ def update_activities():
         int(time.time()),
         process.cpu(-1),
         cpu,
-        "",
+        "no@email",
         process.location(pid),
         pid,
         process.parent_pid(pid),
@@ -84,27 +86,40 @@ def update_activities():
 
 def get_activities():
     cursor = sqlite3.connect(get_activity_path()).cursor()
-    rows = cursor.execute("SELECT * FROM activities").fetchall()
-    print len(rows[0])
-    for n, c in enumerate(rows[0]):
-        print n, c
-    return rows
+    return cursor.execute("SELECT * FROM activities").fetchall()
 
 def generate_report():
     try:
         filename = get_report_path()
         activities = get_activities()
         log.log("Generate report with %d events in file %s" % (len(activities), filename))
+        emails = list(set(row[INDEX_EMAIL] for row in activities))
         with open(filename, "w") as output:
-            generate_header(output)
-            generate_pie_chart(output, activities)
+            generate_header(output, emails)
+            generate_summary_pie_chart(output, emails, activities)
+            for email in reversed(sorted(emails)):
+                generate_pie_chart(output, email, [activity for activity in activities if activity[INDEX_EMAIL] == email])
             generate_full_table(output, activities)
             generate_footer(output)
         webbrowser.open("file://%s" % filename)
     except:
         error.error("Cannot generate report")
 
-def generate_header(output):
+def generate_header(output, emails):
+    charts = """
+        <div style="text-align: center; border: 2px solid grey; margin:20px; width:1100px;">
+            <h2>Summary</h2>
+            <canvas id="chart-area-summary"></canvas>
+        </div>
+        """ + "\n".join([
+            """
+            <div style="text-align: center; border: 2px solid grey; margin:20px; width:1100px">
+                <h2 id="chart-header-%(email)s">%(email)s</h2>
+                <canvas id="chart-area-%(email)s"></canvas>
+            </div>
+            """ % { "email": email or "no email" }
+            for email in emails
+        ])
     output.write("""
         <html>
             <head>
@@ -114,9 +129,9 @@ def generate_header(output):
             </head>
             <body>
                 <div id="canvas-holder">
-                    <canvas id="chart-area"></canvas>
+                    %s
                 </div>
-    """)
+    """ % charts)
 
 def generate_footer(output):
     output.write("""
@@ -124,8 +139,51 @@ def generate_footer(output):
         </html>
     """)
 
-def generate_pie_chart(output, activities):
-    html_template = """
+def generate_summary_pie_chart(output, emails, activities):
+    data = [
+        len([row for row in activities if row[INDEX_EMAIL] == email])
+        for email in emails
+    ]
+    emails = [email.encode('utf8') for email in emails]
+    log.log("Generate summary pie chart %s, %s" % (data, emails))
+    output.write("""
+        <script>
+        var colors = [
+            window.chartColors.red,
+            window.chartColors.blue,
+            window.chartColors.green,
+            window.chartColors.orange,
+            window.chartColors.yellow,
+        ];
+        new Chart(document.getElementById('chart-area-summary').getContext('2d'), {
+			type: 'pie',
+			data: {
+				datasets: [{
+					data: %(data)s,
+					backgroundColor: colors,
+					label: 'Time Spent Well'
+				}],
+				labels: %(labels)s,
+			},
+			options: {
+				responsive: true
+			}
+		});
+        console.log("Generate summary pie chart", %(data)s, %(labels)s);
+        </script>
+    """ % {"data": data, "labels": emails})
+
+def generate_pie_chart(output, pie_email, activities):
+    log.log("Generate pie chart for %d rows for email '%s'" % (len(activities), pie_email))
+    counts = collections.defaultdict(int)
+
+    for timestamp, cpu, app_cpu, email, location, pid, ppid, app_name, title, url, fav in activities:
+        counts[url or "%s + %s" % (app_name, title)] += 1
+
+    labels = repr([title.encode("utf8")[:32] for title in counts.keys()])
+    data = list(counts.values())
+    id = (pie_email or "@no_email").split("@")[1].replace(".", "_")
+    output.write("""
         <script>
         var colors = [
             window.chartColors.red, window.chartColors.orange, window.chartColors.yellow, window.chartColors.green, window.chartColors.blue,
@@ -136,7 +194,7 @@ def generate_pie_chart(output, activities):
             window.chartColors.red, window.chartColors.orange, window.chartColors.yellow, window.chartColors.green, window.chartColors.blue,
             window.chartColors.red, window.chartColors.orange, window.chartColors.yellow, window.chartColors.green, window.chartColors.blue,
         ];
-		var config = {
+		var config_%(id)s = {
 			type: 'pie',
 			data: {
 				datasets: [{
@@ -150,25 +208,12 @@ def generate_pie_chart(output, activities):
 				responsive: true
 			}
 		};
-
-		window.onload = function() {
-			var ctx = document.getElementById('chart-area').getContext('2d');
-			window.myPie = new Chart(ctx, config);
-		};
+        setTimeout(function() {
+            new Chart(document.getElementById('chart-area-%(email)s').getContext('2d'), config_%(id)s);
+            document.getElementById('chart-header-%(email)s').textContent = "%(email)s - %(size)d samples recorded";
+        }, 1500);
         </script>
-    """
-    counts = collections.defaultdict(int)
-
-    for timestamp, cpu, app_cpu, email, location, pid, ppid, app_name, title, url, fav in get_activities():
-        counts[(email, url or "%s + %s" % (app_name, title))] += 1
-
-    def format(title):
-        return title.encode("utf8")[:32]
-
-    labels = repr([format(title) for _,title  in counts.keys()])
-    data = repr(list(counts.values()))
-    html = html_template % {"data": data, "labels": labels}
-    output.write(html)
+    """ % {"data": repr(data), "size": len(data), "id": id, "email": pie_email or "no email", "labels": labels})
 
 def get_fav(fav, app_name, title):
     if app_name != "Google Chrome":

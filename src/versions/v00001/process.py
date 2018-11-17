@@ -198,7 +198,6 @@ def execute_shell_command(operation, pid, command):
         description = "%s process %d (%s)" % (operation, pid, get_name(pid))
         return execute_as_root(description, command)
     else:
-        log.log("Executed %s => %s" % (command, output))
         return True
 
 def set_allow_root(allow_root):

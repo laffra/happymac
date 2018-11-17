@@ -7,6 +7,5 @@ import version_manager
 try:
     version_manager.main()
 except:
-    message = "Could not launch HappyMac"
-    error.error(message)
-    sys.exit(message)
+    error.error("Could not launch HappyMac")
+    sys.exit(1)

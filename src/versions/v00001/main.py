@@ -24,6 +24,10 @@ ICONS = [
     os.path.join(RESOURCE_PATH, "icons/sweating.png"),
     os.path.join(RESOURCE_PATH, "icons/burn.png"),
 ]
+if not os.path.exists(ICONS[0]):
+    ICONS[0] = os.path.join(RESOURCE_PATH, "icons/happy.png"),
+if not os.path.exists(ICONS[1]):
+    ICONS[1] = os.path.join(RESOURCE_PATH, "icons/frown.png"),
 
 TITLE_QUIT = "Quit HappyMac"
 TITLE_REPORT = "Show Activity Report..."
@@ -170,7 +174,7 @@ class HappyMacStatusBarApp(rumps.App):
     def update_statusbar(self):
         title = utils.get_current_app_short_name()
         percent = process.get_cpu_percent()
-        self.icon = self.get_icon(percent) if title == self.last_title else ICONS[0]
+        self.icon = self.get_icon(percent)
         self.title = title if preferences.get(KEY_SHOW_NAME_IN_STATUSBAR, False) else ""
         self.last_title = title
 

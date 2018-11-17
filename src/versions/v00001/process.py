@@ -230,4 +230,5 @@ def execute_as_root(description, command):
 
 def resume_all():
     for pid in processes.keys():
-        resume_pid(pid)
+        if not resume_pid(pid):
+            set_allow_root(False)

@@ -40,4 +40,5 @@ def get_suspended_tasks():
     return [process.get_process(pid) for pid,_ in suspended_tasks]
 
 def exit():
-    process.resume_all()
+    for pid,_ in suspended_tasks:
+        process.resume_pid(pid)

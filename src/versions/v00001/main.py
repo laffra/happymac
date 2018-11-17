@@ -39,9 +39,6 @@ TITLE_SUSPEND = "Suspend"
 TITLE_GOOGLE = "Google this..."
 TITLE_GOOGLE_SYSTEM = "Google this system process..."
 
-TITLE_SHOW_NAME_IN_STATUSBAR = "Show name in Statusbar"
-KEY_SHOW_NAME_IN_STATUSBAR = 'show_name_in_statusbar'
-
 LAUNCHD_PID = 1
 IDLE_PROCESS_PERCENT_CPU = 3
 
@@ -51,7 +48,6 @@ class HappyMacStatusBarApp(rumps.App):
     def __init__(self, quit_callback=None):
         super(HappyMacStatusBarApp, self).__init__("", quit_button=None)
         self.quit_button = None
-        self.last_title = ""
         self.quit_callback = quit_callback
         self.menu = []
         self.create_menu()
@@ -60,17 +56,6 @@ class HappyMacStatusBarApp(rumps.App):
         utils.Timer(0.25, self.update).start()
         self.update_skip_counter = 8
         log.log("Started HappyMac %s" % version_manager.last_version())
-
-    def toggle_name_in_statusbar(self, menuItem=None):
-        try:
-            value = preferences.get(KEY_SHOW_NAME_IN_STATUSBAR, False)
-            preferences.set(KEY_SHOW_NAME_IN_STATUSBAR, not value)
-            self.name_in_statusbar.state = not value
-            self.create_menu()
-        except:
-            error.error("Error in menu callback")
-        finally:
-            self.handle_action()
 
     def terminate(self, menuItem, pid):
         try:
@@ -127,18 +112,9 @@ class HappyMacStatusBarApp(rumps.App):
         return item
 
     def create_menu(self):
-        title = utils.get_current_app_short_name()
         self.icon = ICONS[0]
-        show_name = preferences.get(KEY_SHOW_NAME_IN_STATUSBAR, False)
-        self.title = title if show_name else ""
-        self.last_title = title
-        self.menu.clear()
-        self.name_in_statusbar = rumps.MenuItem(TITLE_SHOW_NAME_IN_STATUSBAR, callback=self.toggle_name_in_statusbar)
-        self.name_in_statusbar.state = show_name
         self.menu = [
             rumps.MenuItem(TITLE_ABOUT % self.version(), callback=self.about),
-            None,
-            self.name_in_statusbar,
             None,
             rumps.MenuItem(TITLE_CURRENT_PROCESSES),
             None,
@@ -160,11 +136,7 @@ class HappyMacStatusBarApp(rumps.App):
         process.set_allow_root(True)
 
     def update_statusbar(self):
-        title = utils.get_current_app_short_name()
-        percent = process.get_cpu_percent()
-        self.icon = self.get_icon(percent)
-        self.title = title if preferences.get(KEY_SHOW_NAME_IN_STATUSBAR, False) else ""
-        self.last_title = title
+        self.icon = self.get_icon(process.get_cpu_percent())
 
     def update_menu(self, foreground_tasks, background_tasks, suspended_tasks, force_update=False):
         foreground_menu_items = filter(None, map(self.menu_item_for_process, foreground_tasks))

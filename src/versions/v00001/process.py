@@ -16,15 +16,6 @@ total_times = {}
 cpu_cache = {}
 processes = {}
 password = ""
-system_processes = set([
-    "sysmond",
-    "launchd",
-    "WindowServer",
-    "kernel_task",
-    "mds_stores",
-    "last"
-])
-login_pid = 0
 
 def clear_process_cache():
     cpu_cache.clear()
@@ -71,8 +62,19 @@ def get_process(pid):
         processes[pid] = psutil.Process(pid)
     return processes[pid]
 
+system_locations = [
+    "/usr/libexec/",
+    "/usr/sbin/",
+    "/sbin/",
+    "/System/Library/",
+]
+
 def is_system_process(pid):
-    return pid <= login_pid or get_name(pid) in system_processes
+    name = location(pid)
+    for path in system_locations:
+        if name.startswith(path):
+            return True
+    return False
 
 def get_name(pid):
     name = get_process(pid).name()
@@ -119,15 +121,11 @@ def details(pid):
     )
 
 def top(exclude, count=5):
-    global login_pid
     my_pid = os.getpid()
     exclude_pids = set(p.pid for p in exclude)
     def create_process(pid):
-        global login_pid
         try:
             name = get_name(pid)
-            if name == "login":
-                login_pid = pid
             if pid in exclude_pids or pid == my_pid or name == "last":
                 return None
             return get_process(pid)
@@ -138,20 +136,25 @@ def top(exclude, count=5):
     return list(reversed(sorted(processes, key=lambda p: -cpu(p.pid))[:count]))
 
 def location(pid):
+    p = get_process(pid)
+    if hasattr(p, "location"):
+        return p.location
     try:
-        path = get_process(pid).cmdline()[0]
+        path = p.cmdline()[0]
     except psutil.AccessDenied:
         path = os.popen("ps %d" % pid).read()
     try:
-        return re.sub(r".*[0-9] (/[^-]*)(-)?", r"\1", path).strip()
-    except Exception as e:
-        return "daemon-%d-%s" % (pid, e)
+        path = re.sub(r".*[0-9] (/[^-]*)-*.*", r"\1", path.split('\n')[-2]).strip()
+    except:
+        pass
+    p.location = path
+    return path
 
 def terminate_pid(pid):
     try:
         name = get_name(pid)
         if is_system_process(pid):
-            message = "Process %s (%s) is a critical process that should not be terminated." % (pid, get_name(pid))
+            message = "HappyMac: Process %s (%s) is a critical process that should not be terminated." % (pid, get_name(pid))
             rumps.alert("Terminate Canceled", message)
             return
         title = "Are you sure you want to terminate process %s (%s)?" % (pid, name)
@@ -164,7 +167,7 @@ def terminate_pid(pid):
             return
         return get_process(pid).terminate()
     except psutil.AccessDenied:
-        execute_as_root("terminate process %d (%s)" % (pid, get_name(pid)), "kill -TERM %s" % pid)
+        return execute_as_root("terminate process %d (%s)" % (pid, get_name(pid)), "kill -TERM %s" % pid)
     except (psutil.NoSuchProcess, psutil.ZombieProcess):
         pass
     except Exception as e:
@@ -172,7 +175,7 @@ def terminate_pid(pid):
 
 def suspend_pid(pid):
     if is_system_process(pid):
-        message = "Process %s (%s) is a critical process that should not be suspended." % (pid, get_name(pid))
+        message = "HappyMac: Process %s (%s) is a critical process that should not be suspended." % (pid, get_name(pid))
         rumps.alert("Suspend Canceled", message)
         return
     try:
@@ -207,7 +210,7 @@ def execute_as_root(description, command):
             return
         window = rumps.Window(
             "Please enter your admin or root password:",
-            "To %s, an admin or root Password is needed by HappyMac." % description,
+            "HappyMac: To %s, an admin or root Password is needed." % description,
             cancel = "Cancel"
         )
         window._textfield = AppKit.NSSecureTextField.alloc().initWithFrame_(Foundation.NSMakeRect(0, 0, 200, 25))
@@ -219,5 +222,5 @@ def execute_as_root(description, command):
     if password:
         result = os.popen('echo "%s" | sudo -S %s' % (password, command)).read()
         log.log("Ran as root: %s  => %s" % (command, result))
-        return result or True
-    return ""
+        return True
+    return False

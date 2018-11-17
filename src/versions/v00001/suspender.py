@@ -16,7 +16,6 @@ def suspend_process(pid, manual=False):
     if process.suspend_pid(pid):
         suspended_tasks.add((pid, name))
         if manual:
-            log.log("Suspender: suspend %d %s - %s" % (pid, name, suspended_tasks))
             set_suspend_preference(name, True)
     else:
         set_suspend_preference(name, False)
@@ -24,17 +23,12 @@ def suspend_process(pid, manual=False):
 def resume_process(pid, manual=False):
     name = process.get_name(pid)
     if manual or (pid,name) in suspended_tasks:
-        log.log("Suspender: about to resume %d %s %s" % (pid, name, manual))
         if process.resume_pid(pid):
-            log.log("           resumed %d = %s" % (pid, name))
             for pid, suspended_name in list(suspended_tasks):
                 if name == suspended_name:
                     suspended_tasks.remove((pid, name))
             if manual:
-                log.log("Resume: resume %d %s - %s" % (pid, name, suspended_tasks))
                 set_suspend_preference(name, False)
-        else:
-            log.log("           could not resume %d = %s" % (pid, name))
 
 def set_suspend_preference(name, value):
     preferences.set("suspend - %s" % name, value)

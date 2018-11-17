@@ -90,7 +90,7 @@ def run_osa_script(script):
 def get_auto_release_pool():
     return Quartz.NSAutoreleasePool.alloc().init()
 
-class OnMainThread(Foundation.NSObject):
+class OnMainThread():
     def initWithCallback_(self, callback):
         self.callback = callback
         return self
@@ -102,9 +102,12 @@ class OnMainThread(Foundation.NSObject):
     def run(self):
         self.pyobjc_performSelectorOnMainThread_withObject_("run_:", None)
 
+
 class Timer(threading.Thread):
     def __init__(self, interval, callback):
+        global OnMainThread
         super(Timer, self).__init__(name="Timer for %ds for %s" % (interval, callback))
+        OnMainThread = type('OnMainThread', (Foundation.NSObject,), dict(OnMainThread.__dict__))
         self.callback = OnMainThread.alloc().initWithCallback_(callback)
         self.interval = interval
 

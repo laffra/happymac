@@ -18,6 +18,8 @@ def suspend_process(pid, manual=False):
         if manual:
             log.log("Suspender: suspend %d %s - %s" % (pid, name, suspended_tasks))
             set_suspend_preference(name, True)
+    else:
+        set_suspend_preference(name, False)
 
 def resume_process(pid, manual=False):
     name = process.get_name(pid)

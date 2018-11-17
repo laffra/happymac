@@ -174,7 +174,9 @@ def terminate_pid(pid):
     message = ("Terminating this process could lead to data loss.\n\n" +
             "We suggest you suspend the process, not terminate it.")
     if rumps.alert(title, message, ok="Terminate, I know what I am doing", cancel="Cancel"):
-        return execute_shell_command("terminate", pid, "kill -TERM %s" % pid)
+        return execute_shell_command("terminate", pid, "kill -9 %s" % pid)
+    else:
+        log.log("User skipped termination of process %d (%s)" % (pid, get_name(pid)))
 
 def suspend_pid(pid):
     if is_system_process(pid):
@@ -196,6 +198,7 @@ def execute_shell_command(operation, pid, command):
         description = "%s process %d (%s)" % (operation, pid, get_name(pid))
         return execute_as_root(description, command)
     else:
+        log.log("Executed %s => %s" % (command, output))
         return True
 
 def set_allow_root(allow_root):

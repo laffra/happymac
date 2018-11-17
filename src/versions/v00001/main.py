@@ -94,6 +94,8 @@ class HappyMacStatusBarApp(rumps.App):
         return version_manager.last_version()
 
     def menu_item_for_process(self, p, resumable=False, suspendable=False):
+        if not p:
+            return None
         name = process.get_name(p.pid)
         cpu = process.cpu(p.pid)
         percent = max(0 if resumable else 1, int(100 * cpu))

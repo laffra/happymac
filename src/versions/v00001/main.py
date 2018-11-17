@@ -19,8 +19,8 @@ import webbrowser
 
 RESOURCE_PATH = getattr(sys, "_MEIPASS", os.path.abspath("."))
 ICONS = [
-    os.path.join(RESOURCE_PATH, "icons/happy.png"),
-    os.path.join(RESOURCE_PATH, "icons/frown.png"),
+    os.path.join(RESOURCE_PATH, "icons/happy-transparent.png"),
+    os.path.join(RESOURCE_PATH, "icons/unhappy-transparent.png"),
     os.path.join(RESOURCE_PATH, "icons/sweating.png"),
     os.path.join(RESOURCE_PATH, "icons/burn.png"),
 ]

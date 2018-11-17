@@ -153,9 +153,11 @@ class HappyMacStatusBarApp(rumps.App):
     def menuWillOpen_(self, menu):
         self.menu_is_open = True
         self.update_skip_counter = 0
+        process.set_allow_root(False)
 
     def menuDidClose_(self, menu):
         self.menu_is_open = False
+        process.set_allow_root(True)
 
     def update_statusbar(self):
         title = utils.get_current_app_short_name()
@@ -201,6 +203,7 @@ class HappyMacStatusBarApp(rumps.App):
     def quit(self, menuItem=None):
         try:
             log.log("Quit - Ran for %d seconds" % int(time.time() - self.start))
+            process.set_allow_root(True)
             suspender.exit()
             if self.quit_callback:
                 self.quit_callback()

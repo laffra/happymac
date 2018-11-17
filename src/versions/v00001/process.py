@@ -16,6 +16,7 @@ total_times = {}
 cpu_cache = {}
 processes = {}
 password = ""
+root_allowed = True
 
 def clear_process_cache():
     cpu_cache.clear()
@@ -197,7 +198,13 @@ def execute_shell_command(operation, pid, command):
     else:
         return True
 
+def set_allow_root(allow_root):
+    global root_allowed
+    root_allowed = allow_root
+
 def execute_as_root(description, command):
+    if not root_allowed:
+        return False
     global password
     if not password:
         if not AppKit.NSThread.isMainThread():

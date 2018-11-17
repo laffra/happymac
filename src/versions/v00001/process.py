@@ -59,7 +59,10 @@ def cpu(pid=-1):
 
 def get_process(pid):
     if not pid in processes:
-        processes[pid] = psutil.Process(pid)
+        try:
+            processes[pid] = psutil.Process(pid)
+        except (psutil.NoSuchProcess, psutil.ZombieProcess):
+            return None
     return processes[pid]
 
 system_locations = [
@@ -70,18 +73,23 @@ system_locations = [
 ]
 
 def is_system_process(pid):
+    if pid < 2:
+        return True
     name = location(pid)
     for path in system_locations:
         if name.startswith(path):
-            return True
+                return True
     return False
 
 def get_name(pid):
-    name = get_process(pid).name()
-    if len(name) == 16:
-        # psutil truncates names to 16 characters
-        name = location(pid).split("/")[-1]
-    return name
+    try:
+        name = get_process(pid).name()
+        if len(name) == 16:
+            # psutil truncates names to 16 characters
+            name = location(pid).split("/")[-1]
+        return name
+    except:
+        return ""
 
 def parent_pid(pid):
     return get_process(pid).ppid()
@@ -91,7 +99,9 @@ def get_total_time(pid):
     return times.user + times.system + getattr(times, "children_user", 0) + getattr(times, "children_system", 0)
 
 def child_processes(pid, includeSelf=True):
-    kids = get_process(pid).children()
+    p = get_process(pid)
+    if not p: return []
+    kids = p.children()
     for grandkid in kids:
         kids.extend(child_processes(grandkid.pid, False))
     if includeSelf:
@@ -143,6 +153,8 @@ def location(pid):
         path = p.cmdline()[0]
     except psutil.AccessDenied:
         path = os.popen("ps %d" % pid).read()
+    except (AttributeError, IndexError, psutil.NoSuchProcess, psutil.ZombieProcess):
+        return ""
     try:
         path = re.sub(r".*[0-9] (/[^-]*)-*.*", r"\1", path.split('\n')[-2]).strip()
     except:
@@ -151,56 +163,39 @@ def location(pid):
     return path
 
 def terminate_pid(pid):
-    try:
-        name = get_name(pid)
-        if is_system_process(pid):
-            message = "Process %s (%s) is a critical process that should not be terminated." % (pid, get_name(pid))
-            rumps.alert("HappyMac: Terminate Canceled", message)
-            return
-        title = "Are you sure you want to terminate process %s (%s)?" % (pid, name)
-        message = ("Terminating this process could lead to data loss.\n\n" +
-                "If this is a system process, it may just get restarted. " +
-                "In the worst case, you could lock up your machine.\n\n" +
-                "We suggest you suspend the process, not terminate it.")
-        if not rumps.alert(title, message, ok="Terminate, I know what I am doing", cancel="Cancel"):
-            log.log("User canceled termination of process %d (%s)" % (pid, name))
-            return
-        return get_process(pid).terminate()
-    except psutil.AccessDenied:
-        return execute_as_root("terminate process %d (%s)" % (pid, get_name(pid)), "kill -TERM %s" % pid)
-    except (psutil.NoSuchProcess, psutil.ZombieProcess):
-        pass
-    except Exception as e:
-        log.log("Unhandled Error in process.terminate", e)
+    if is_system_process(pid):
+        rumps.alert(
+            "HappyMac: Terminate Canceled",
+            "Process %s (%s) is a critical process that should not be terminated." % (pid, get_name(pid))
+        )
+        return False
+    title = "Are you sure you want to terminate process %s (%s)?" % (pid, get_name(pid))
+    message = ("Terminating this process could lead to data loss.\n\n" +
+            "We suggest you suspend the process, not terminate it.")
+    if rumps.alert(title, message, ok="Terminate, I know what I am doing", cancel="Cancel"):
+        return execute_shell_command("terminate", pid, "kill -TERM %s" % pid)
 
 def suspend_pid(pid):
     if is_system_process(pid):
-        message = "Process %s (%s) is a critical process that should not be suspended." % (pid, get_name(pid))
-        rumps.alert("HappyMac: Suspend Canceled", message)
-        return
-    try:
-        get_process(pid).suspend()
-        return True
-    except psutil.AccessDenied:
-        return execute_as_root("suspend process %d (%s)" % (pid, get_name(pid)), "kill -STOP %s" % pid)
-    except (psutil.NoSuchProcess, psutil.ZombieProcess):
-        return True
-    except Exception as e:
-        log.log("Unhandled Error in process.suspend", e)
+        rumps.alert(
+            "HappyMac: Suspend Canceled",
+            "Process %s (%s) is a critical process that should not be suspended." % (pid, get_name(pid))
+        )
+        return False
+    return execute_shell_command("suspend", pid, "kill -STOP %s" % pid)
 
 def resume_pid(pid):
     if is_system_process(pid):
-        return
-    try:
-        get_process(pid).resume()
+        return False
+    return execute_shell_command("resume", pid, "kill -CONT %s" % pid)
+
+def execute_shell_command(operation, pid, command):
+    output = os.popen("%s 2>&1" % command).read()
+    if "Operation not permitted" in output:
+        description = "%s process %d (%s)" % (operation, pid, get_name(pid))
+        return execute_as_root(description, command)
+    else:
         return True
-    except psutil.AccessDenied:
-        return execute_as_root("resume process %d (%s)" % (pid, get_name(pid)), "kill -CONT %s" % pid)
-    except (psutil.NoSuchProcess, psutil.ZombieProcess):
-        log.log("Could not resume zombie process %d (%s)" % (pid, get_name(pid)))
-        return True
-    except Exception as e:
-        log.log("Unhandled Error in process.resume", e)
 
 def execute_as_root(description, command):
     global password
@@ -210,7 +205,7 @@ def execute_as_root(description, command):
             return
         window = rumps.Window(
             "Please enter your admin or root password:",
-            "HappyMac: To %s, an admin or root Password is needed." % description,
+            "HappyMac: To %s, an admin or root password is needed." % description,
             cancel = "Cancel"
         )
         window._textfield = AppKit.NSSecureTextField.alloc().initWithFrame_(Foundation.NSMakeRect(0, 0, 200, 25))
@@ -220,7 +215,10 @@ def execute_as_root(description, command):
         if response.clicked:
             password = response.text
     if password:
-        result = os.popen('echo "%s" | sudo -S %s' % (password, command)).read()
-        log.log("Ran as root: %s  => %s" % (command, result))
+        os.popen('echo "%s" | sudo -S %s' % (password, command)).read()
         return True
     return False
+
+def resume_all():
+    for pid in processes.keys():
+        resume_pid(pid)

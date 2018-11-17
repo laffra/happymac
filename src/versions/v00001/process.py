@@ -151,7 +151,8 @@ def terminate_pid(pid):
     try:
         name = get_name(pid)
         if is_system_process(pid):
-            rumps.alert("Terminate Canceled", "This looks like a critical process that should not be terminated.")
+            message = "Process %s (%s) is a critical process that should not be terminated." % (pid, get_name(pid))
+            rumps.alert("Terminate Canceled", message)
             return
         title = "Are you sure you want to terminate process %s (%s)?" % (pid, name)
         message = ("Terminating this process could lead to data loss.\n\n" +
@@ -171,7 +172,8 @@ def terminate_pid(pid):
 
 def suspend_pid(pid):
     if is_system_process(pid):
-        rumps.alert("Terminate Canceled", "This looks like a critical process that should not be suspended.")
+        message = "Process %s (%s) is a critical process that should not be suspended." % (pid, get_name(pid))
+        rumps.alert("Suspend Canceled", message)
         return
     try:
         get_process(pid).suspend()
@@ -210,6 +212,7 @@ def execute_as_root(description, command):
         )
         window._textfield = AppKit.NSSecureTextField.alloc().initWithFrame_(Foundation.NSMakeRect(0, 0, 200, 25))
         window._alert.setAccessoryView_(window._textfield)
+        window._alert.window().setInitialFirstResponder_(window._textfield)
         response = window.run()
         if response.clicked:
             password = response.text

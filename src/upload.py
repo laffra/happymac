@@ -4,7 +4,7 @@ import re
 import os
 from versions import v00001
 
-names = [ "main", "activity", "install", "process", "server", "suspender", "utils" ]
+names = [ "main", "install", "process", "suspender", "utils" ]
 contents = ""
 short_names = {}
 

@@ -1,4 +1,3 @@
-import activity
 import error
 import functools
 import gc
@@ -9,7 +8,6 @@ import os
 import preferences
 import process
 import rumps
-import server
 import suspender
 import sys
 import time
@@ -30,7 +28,6 @@ if not os.path.exists(ICONS[1]):
     ICONS[1] = os.path.join(RESOURCE_PATH, "icons/frown.png"),
 
 TITLE_QUIT = "Quit HappyMac"
-TITLE_REPORT = "Show Activity Report..."
 TITLE_ABOUT = "About HappyMac - %s"
 TITLE_CURRENT_PROCESSES = "Current App Tasks"
 TITLE_OTHER_PROCESSES = "Background Tasks:"
@@ -60,7 +57,6 @@ class HappyMacStatusBarApp(rumps.App):
         self.create_menu()
         self.start = time.time()
         self.menu_is_open = False
-        server.start_server()
         utils.Timer(0.25, self.update).start()
         self.update_skip_counter = 8
         log.log("Started HappyMac %s" % version_manager.last_version())
@@ -109,14 +105,6 @@ class HappyMacStatusBarApp(rumps.App):
         finally:
             self.handle_action()
 
-    def report(self, menuItem=None):
-        try:
-            activity.generate_report()
-        except:
-            error.error("Error in menu callback")
-        finally:
-            self.handle_action()
-
     def version(self):
         return version_manager.last_version()
 
@@ -147,7 +135,6 @@ class HappyMacStatusBarApp(rumps.App):
         self.menu.clear()
         self.name_in_statusbar = rumps.MenuItem(TITLE_SHOW_NAME_IN_STATUSBAR, callback=self.toggle_name_in_statusbar)
         self.name_in_statusbar.state = show_name
-        report = [rumps.MenuItem(TITLE_REPORT, callback=self.report), None] if running_local else []
         self.menu = [
             rumps.MenuItem(TITLE_ABOUT % self.version(), callback=self.about),
             None,
@@ -159,7 +146,6 @@ class HappyMacStatusBarApp(rumps.App):
             None,
             rumps.MenuItem(TITLE_SUSPENDED_PROCESSES),
             None,
-        ] + report + [
             rumps.MenuItem(TITLE_QUIT, callback=self.quit),
         ]
         self.menu._menu.setDelegate_(self)
@@ -199,7 +185,6 @@ class HappyMacStatusBarApp(rumps.App):
         self.update_skip_counter = 8
         process.clear_process_cache()
         utils.clear_windows_cache()
-        activity.update_activities()
         self.update_statusbar()
         percent = process.get_cpu_percent()
         if force_update or percent > 25 or self.menu_is_open:

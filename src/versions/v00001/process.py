@@ -154,8 +154,8 @@ def terminate_pid(pid):
     try:
         name = get_name(pid)
         if is_system_process(pid):
-            message = "HappyMac: Process %s (%s) is a critical process that should not be terminated." % (pid, get_name(pid))
-            rumps.alert("Terminate Canceled", message)
+            message = "Process %s (%s) is a critical process that should not be terminated." % (pid, get_name(pid))
+            rumps.alert("HappyMac: Terminate Canceled", message)
             return
         title = "Are you sure you want to terminate process %s (%s)?" % (pid, name)
         message = ("Terminating this process could lead to data loss.\n\n" +
@@ -175,8 +175,8 @@ def terminate_pid(pid):
 
 def suspend_pid(pid):
     if is_system_process(pid):
-        message = "HappyMac: Process %s (%s) is a critical process that should not be suspended." % (pid, get_name(pid))
-        rumps.alert("Suspend Canceled", message)
+        message = "Process %s (%s) is a critical process that should not be suspended." % (pid, get_name(pid))
+        rumps.alert("HappyMac: Suspend Canceled", message)
         return
     try:
         get_process(pid).suspend()

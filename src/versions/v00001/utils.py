@@ -4,8 +4,10 @@
 import AppKit
 import collections
 import error
+import Foundation
 import log
 import os
+import objc
 import process
 import psutil
 import Quartz
@@ -88,21 +90,33 @@ def run_osa_script(script):
 def get_auto_release_pool():
     return Quartz.NSAutoreleasePool.alloc().init()
 
+class OnMainThread(Foundation.NSObject):
+    def initWithCallback_(self, callback):
+        self.callback = callback
+        return self
+
+    @objc.namedselector("run_:")
+    def run_(self, args=None):
+        self.callback()
+
+    def run(self):
+        self.pyobjc_performSelectorOnMainThread_withObject_("run_:", None)
+
 class Timer(threading.Thread):
     def __init__(self, interval, callback):
         super(Timer, self).__init__(name="Timer for %ds for %s" % (interval, callback))
-        self.callback = callback
+        self.callback = OnMainThread.alloc().initWithCallback_(callback)
         self.interval = interval
 
     def run(self):
         while True:
             time.sleep(self.interval)
             try:
-                self.callback()
+                self.callback.run()
             except psutil.NoSuchProcess:
                 pass # this is normal
             except Exception as e:
-                error.error("Error in Timer callback '%s': %s" % (self.callback.im_func.__name__, e))
+                error.error("Error in Timer callback '%s': %s" % (self.callback.callback.im_func.__name__, e))
 
 image_cache = {}
 rumps_nsimage_from_file = rumps.rumps._nsimage_from_file

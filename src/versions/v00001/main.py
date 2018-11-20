@@ -170,6 +170,7 @@ class HappyMacStatusBarApp(rumps.App):
             suspended_tasks = suspender.get_suspended_tasks()
             if force_update or not self.menu_is_highlighted():
                 self.update_menu(foreground_tasks, background_tasks, suspended_tasks, force_update)
+        suspender.activate_current_app()
 
     def menu_is_highlighted(self):
         return self.menu._menu.highlightedItem()

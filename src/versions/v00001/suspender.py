@@ -1,15 +1,34 @@
 from collections import defaultdict
 import log
+import os
 import process
 import preferences
+import utils
 
 suspended_tasks = set()
 
+ACTIVATE_CURRENT_APP = """
+    set currentApp to path to frontmost application
+    delay 2
+    activate currentApp
+"""
+
+last_activated_pid = 0
+
 def manage(foregroundTasks, backgroundTasks):
     for task in foregroundTasks:
-        resume_process(task.pid)
+        if not process.is_system_process(task.pid):
+            resume_process(task.pid)
     for task in filter(lambda task: get_suspend_preference(task.pid), backgroundTasks):
-        suspend_process(task.pid)
+        if not process.is_system_process(task.pid):
+            suspend_process(task.pid)
+
+def activate_current_app():
+    global last_activated_pid
+    pid = utils.get_current_app_pid()
+    if pid != last_activated_pid:
+        os.system("osascript -e \"%s\" &" % ACTIVATE_CURRENT_APP)
+        last_activated_pid = pid
 
 def suspend_process(pid, manual=False):
     name = process.get_name(pid)

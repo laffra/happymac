@@ -9,9 +9,7 @@ suspended_tasks = set()
 
 ACTIVATE_CURRENT_APP = """
     set currentApp to path to frontmost application
-    delay 1
-    activate currentApp
-    delay 2
+    delay 3
     activate currentApp
 """
 

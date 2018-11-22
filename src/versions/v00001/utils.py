@@ -11,7 +11,8 @@ import objc
 import process
 import psutil
 import Quartz
-from Quartz import CG, CoreGraphics
+from Quartz import CG
+from Quartz import CoreGraphics
 import rumps
 import struct
 import time

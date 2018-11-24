@@ -60,9 +60,13 @@ Sometimes, you may want to suspend a process that does not belong to your curren
 
 ### Critical Tasks
 
-Some Mac tasks are part of the operating system and have a critical function. One such example is *WindowServer*. It is the process that draws your display and handles events. If you suspend that process, the only recovery would be to shut down your mac by pressing the power button for 5 seconds. Process like WindowServer will not be suspended by HappyMac:
+Some Mac tasks are part of the operating system and have a critical function. One such example is *WindowServer*. It is the process that draws your display and handles events. If you suspend that process, the only recovery would be to shut down your mac by pressing the power button for 5 seconds. Processes like WindowServer will not be suspended by HappyMac:
 
   <img src="http://chrislaffra.com/happymac/windowserver.png" width=500px>
+
+### Terminating Tasks
+
+The context menu on processes listed in HappyMac have a menu item to **Google** for the meaning of the task. In addition to that, it also has a **Terminate** menu item. We strongly recommend you do not terminate processes. HappyMac will show a warning and ask you to confirm you really want to terminate the process, rather than suspend it. 
 
 ### Implementation
 
@@ -70,7 +74,7 @@ HappyMac is written in Python and uses [psutil](https://pypi.org/project/psutil/
 
 To draw the status bar menu and the dialogs shown above, [rumps](https://github.com/jaredks/rumps) is used.
 
-The distribution, i.e., the DMG file, is created using 
+The distribution, i.e., the DMG file, is created using [PyInstaller](http://www.pyinstaller.org/).
 
 ### Development
 
@@ -85,6 +89,13 @@ It would be great to add more refined policies for suspending processes. Policie
   - When doing a build, don't do backups
   - When I am tethered to my phone, suspend process that use the network for more than X MB per minute
   - When the CPU is below 30% for a while, it is OK to run backups
+
+### Rules of Engagement
+
+When you actually run HappyMac, be aware you agree with the [Privacy Policy](https://happymac.app/privacy)
+and [Terms & Conditions](https://happymac.app/eula).
+
+Furthermore, please make sure you are in compliance with your company's IT policy when using HappyMac on your work laptop. 
 
 ### License
 MIT

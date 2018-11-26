@@ -1,3 +1,4 @@
+from __future__ import print_function
 #pylint: disable=E1101
 #pylint: disable=E0611
 
@@ -82,7 +83,7 @@ def get_all_windows():
         all_windows = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListExcludeDesktopElements, Quartz.kCGNullWindowID)
     for window in all_windows:
         if False and window.valueForKey_('kCGWindowIsOnscreen') :
-            print window
+            print(window)
     return all_windows
 
 def run_osa_script(script):
@@ -120,7 +121,7 @@ class Timer(threading.Thread):
             except psutil.NoSuchProcess:
                 pass # this is normal
             except Exception as e:
-                error.error("Error in Timer callback '%s': %s" % (self.callback.callback.im_func.__name__, e))
+                error.error("Error in Timer callback '%s': %s" % (self.callback.callback.__func__.__name__, e))
 
 image_cache = {}
 rumps_nsimage_from_file = rumps.rumps._nsimage_from_file

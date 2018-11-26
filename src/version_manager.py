@@ -1,3 +1,4 @@
+from __future__ import print_function
 #pylint: disable=E0401
 
 import error
@@ -116,4 +117,4 @@ def get_versions():
     return sorted(builtin_versions + downloaded_versions)
 
 if __name__ == "__main__":
-    print get_hardware_uuid()
+    print(get_hardware_uuid())

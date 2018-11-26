@@ -1,3 +1,4 @@
+from __future__ import print_function
 #pylint: disable=E0401
 #pylint: disable=E1121
 
@@ -7,7 +8,7 @@ import traceback
 tester = None
 
 def start():
-    print "######## Auger testing start"
+    print("######## Auger testing start")
 
     import error
     import license
@@ -41,7 +42,7 @@ def start():
     version_manager.main(done)
 
 def done():
-    print "######## Auger testing done"
+    print("######## Auger testing done")
     try:
         tester.__exit__(None, None, None)
     except:

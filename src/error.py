@@ -1,3 +1,4 @@
+from __future__ import print_function
 import datetime
 import log
 import os
@@ -86,7 +87,7 @@ def error(message):
         with open(path, "a") as output:
             output.write(error)
         with open(path) as input:
-            print input.read()
+            print(input.read())
     except:
         pass
     log.log(error)

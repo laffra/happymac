@@ -1,3 +1,4 @@
+from __future__ import print_function
 import datetime
 import os
 
@@ -20,7 +21,7 @@ def log(message, error=None):
     with open(get_log_path(), "a") as output:
         output.write("    %s" % line)
         output.write("\n")
-    print line
+    print(line)
 
 def get_log():
     with open(get_log_path()) as input:

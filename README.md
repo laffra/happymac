@@ -20,9 +20,7 @@ The icon itself changes from *happy* to *unhappy* to *sweating* to *mad*, depend
 The menu shows three categories of processes:
   - **Current App Tasks**: These are the processes that make up the *process* *family* of the currently active application. This includes the process that created the currently active window and all its parent processes up to the Launch process. Also included are all the child processes of the current process, their child processes, etc. 
   
-  - **Background Tasks**: These are tasks that use up CPU even though they run in the background. Literally hundreds of tasks normally run in the background and they only become troublesome when they run hot. In the menu shown below, there are 4 background tasks, that together use up about 30% of one CPU, which is about 8% of the entire machine.
-  
-    <img src="http://chrislaffra.com/happymac/menu4.png" width=400px>
+  - **Background Tasks**: These are tasks that use up CPU even though they run in the background. Literally hundreds of tasks normally run in the background and they only become troublesome when they run hot. 
   
     At any point in time you can decide to suspend any background task using the context menu, as is shown above. What happens is that the given task is suspended and moved to the suspended tasks. HappyMac also remembers this decision and will make sure the process is suspended any time it is not part of the foreground task family.
   
@@ -40,17 +38,9 @@ Just like the task bar icon, each individual task gets a different emoticon for 
 
 ### A Practical Example
 
-Say we are developing an Android app and start up the Intellij IDE. From it, we launch the Android emulator. CPU goes up, as we can tell as it will not take long for the Macbook's fan to turn on. When we switch to another application, both the **idea** and **qemu-system-i386** tasks keep using CPU:
+Say we are developing an Android app and start up the Intellij IDE. From it, we launch the Android emulator. CPU goes up, as we can tell as it will not take long for the Macbook's fan to turn on. When we switch to another application, both the **idea** and **qemu-system-i386** tasks keep using CPU.
 
-  <img src="http://chrislaffra.com/happymac/menu6.png" width=300px>
-
-Together, they use up more than two cores. Eventually, **idea** will slow down and not use any CPU anymore, but the second task (which is the Android emulator) keeps on using CPU, even when it is "not doing anything". With HappyMac, such processes can be automatically suspended. This is what the machine looks like with both processes suspended:
-
-  <img src="http://chrislaffra.com/happymac/menu7.png" width=300px>
-
-Shown in blue above, my CPU is still kind of "unhappy". This is because CrashPlan and Carbon like to use up 30% of the CPU on average on my machine and this tends to go up higher when doing a large build. If I am low on battery, or connected over tether on my phone, you could decide to suspend things like backups temporarily and make your Mac really happy again:
-
-  <img src="http://chrislaffra.com/happymac/taskbar-happy.png" width=200px>
+Together, they use up more than two cores. Eventually, **idea** will slow down and not use any CPU anymore, but the second task (which is the Android emulator) keeps on using CPU, even when it is "not doing anything". With HappyMac, such processes can be automatically suspended. 
 
 ### Admin Tasks
 

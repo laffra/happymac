@@ -11,11 +11,7 @@
 Visit [happymac.app](https://happymac.app) for a ready to install DMG of HappyMac.
 
 # How it works
-HappyMac is a status bar app for Mac. It looks like this when activated:
-
-   <img src="http://chrislaffra.com/happymac/menu3.png" width=250px>
-
-The icon itself changes from *happy* to *unhappy* to *sweating* to *mad*, depending on the current load of your Mac. In the menu above, the machine is showing as *sweating*, as the overall CPU usage on the machine, including all available cores, is currently in between 51% and 75%.
+HappyMac is a status bar app for Mac with an icon showing in the status bar. The icon itself changes from *happy* to *unhappy* to *sweating* to *mad*, depending on the current load of your Mac. In the menu above, the machine is showing as *sweating*, as the overall CPU usage on the machine, including all available cores, is currently in between 51% and 75%.
 
 The menu shows three categories of processes:
   - **Current App Tasks**: These are the processes that make up the *process* *family* of the currently active application. This includes the process that created the currently active window and all its parent processes up to the Launch process. Also included are all the child processes of the current process, their child processes, etc. 
@@ -24,9 +20,7 @@ The menu shows three categories of processes:
   
     At any point in time you can decide to suspend any background task using the context menu, as is shown above. What happens is that the given task is suspended and moved to the suspended tasks. HappyMac also remembers this decision and will make sure the process is suspended any time it is not part of the foreground task family.
   
-  - **Suspended Background Tasks**: Suspended tasks are those that are currently suspended by HappyMac. You can resume a suspended task by bringing the process to the foreground, assuming it has a UI. You can also manually resume a task using the context menu:
-  
-    <img src="http://chrislaffra.com/happymac/menu5.png" width=400px>
+  - **Suspended Background Tasks**: Suspended tasks are those that are currently suspended by HappyMac. You can resume a suspended task by bringing the process to the foreground, assuming it has a UI. You can also manually resume a task using the context menu.
   
 ### HappyMac Logic
 

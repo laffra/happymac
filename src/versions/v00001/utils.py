@@ -40,6 +40,9 @@ def get_active_chrome_tabs():
 def get_active_window_name():
     return get_window_name(get_current_app_pid())
 
+def dark_mode():
+    return os.popen("defaults read -g AppleInterfaceStyle 2>/dev/null").read()
+
 def get_active_window_dimensions():
     return get_window_dimensions(get_current_app_pid())
 

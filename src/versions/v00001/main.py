@@ -26,6 +26,16 @@ if not os.path.exists(ICONS[0]):
     ICONS[0] = os.path.join(RESOURCE_PATH, "icons/happy.png"),
 if not os.path.exists(ICONS[1]):
     ICONS[1] = os.path.join(RESOURCE_PATH, "icons/frown.png"),
+DARK_ICONS = [
+    os.path.join(RESOURCE_PATH, "icons/happy-white-transparent.png"),
+    os.path.join(RESOURCE_PATH, "icons/unhappy-white-transparent.png"),
+    os.path.join(RESOURCE_PATH, "icons/sweating.png"),
+    os.path.join(RESOURCE_PATH, "icons/burn.png"),
+]
+if not os.path.exists(DARK_ICONS[0]):
+    DARK_ICONS[0] = os.path.join(RESOURCE_PATH, "icons/happy.png"),
+if not os.path.exists(DARK_ICONS[1]):
+    DARK_ICONS[1] = os.path.join(RESOURCE_PATH, "icons/frown.png"),
 
 TITLE_QUIT = "Quit HappyMac"
 TITLE_ABOUT = "About HappyMac - %s"
@@ -47,7 +57,7 @@ running_local = not getattr(sys, "_MEIPASS", False)
 
 class HappyMacStatusBarApp(rumps.App):
     def __init__(self, quit_callback=None):
-        super(HappyMacStatusBarApp, self).__init__("", quit_button=None, template=True)
+        super(HappyMacStatusBarApp, self).__init__("", quit_button=None)
         self.quit_button = None
         self.quit_callback = quit_callback
         self.menu = []
@@ -116,7 +126,7 @@ class HappyMacStatusBarApp(rumps.App):
         return item
 
     def create_menu(self):
-        self.icon = ICONS[0]
+        self.icon = DARK_ICONS[0] if utils.dark_mode() else ICONS[0]
         self.menu = [
             rumps.MenuItem(TITLE_ABOUT % self.version(), callback=self.about),
             None,
@@ -187,8 +197,9 @@ class HappyMacStatusBarApp(rumps.App):
             rumps.quit_application()
 
     def get_icon(self, percent):
-        iconIndex = 0 if not percent else max(0, min(len(ICONS) - 1, int(percent * len(ICONS) / 70.0)))
-        return ICONS[iconIndex]
+        icons = DARK_ICONS if utils.dark_mode() else ICONS
+        iconIndex = 0 if not percent else max(0, min(len(icons) - 1, int(percent * len(icons) / 70.0)))
+        return icons[iconIndex]
 
     def about(self, menuItem=None):
         webbrowser.open("http://happymac.app")

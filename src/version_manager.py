@@ -13,6 +13,7 @@ import rumps
 import sys
 import StringIO
 import tempfile
+import uuid
 import versions
 
 try:
@@ -79,7 +80,7 @@ def load_module_from_source(module_name, source):
 
 def download_latest():
     try:
-        hardware_uuid = get_hardware_uuid()
+        hardware_uuid = uuid.get_hardware_uuid()
         latest_url = 'https://happymac.app/_functions/latest?version=%s&uuid=%s' % (last_version(), hardware_uuid)
         log.log("Download: getting the latest version at %s" % latest_url)
         latest = json.loads(requests.get(latest_url).content)
@@ -105,9 +106,6 @@ def last_version():
         return "v00001"
     return sorted(get_versions())[-1]
 
-def get_hardware_uuid():
-    return os.popen("system_profiler SPHardwareDataType | grep UUID | sed 's/.* //' ").read()
-
 def get_versions():
     available_builtin_versions = filter(inspect.ismodule, [ getattr(versions, name) for name in dir(versions) ])
     builtin_versions = [version.__name__.split(".")[-1] for version in available_builtin_versions]
@@ -116,4 +114,4 @@ def get_versions():
     return sorted(builtin_versions + downloaded_versions)
 
 if __name__ == "__main__":
-    print get_hardware_uuid()
+    print uuid.get_hardware_uuid()

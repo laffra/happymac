@@ -12,16 +12,28 @@ ACTIVATE_CURRENT_APP = """
     delay 3
     activate currentApp
 """
+SUSPEND_ALWAYS = "always"
+SUSPEND_ON_BATTERY = "battery"
 
 last_activated_pid = 0
+
+print("Battery:", process.battery_percentage())
 
 def manage(foregroundTasks, backgroundTasks):
     for task in foregroundTasks:
         if not process.is_system_process(task.pid):
             resume_process(task.pid)
+    if not process.on_battery():
+        suspended_pids = [pid for pid,_ in suspended_tasks]
+        for pid in filter(lambda pid: get_suspend_preference(pid) == SUSPEND_ON_BATTERY, suspended_pids):
+            resume_process(pid)
     for task in filter(lambda task: get_suspend_preference(task.pid), backgroundTasks):
-        if not process.is_system_process(task.pid):
-            suspend_process(task.pid)
+        if process.is_system_process(task.pid):
+            continue
+        suspend_task_on_battery = get_suspend_preference(task.pid) == SUSPEND_ON_BATTERY
+        if suspend_task_on_battery and not process.on_battery():
+            continue
+        suspend_process(task.pid, battery=suspend_task_on_battery)
 
 def activate_current_app():
     global last_activated_pid
@@ -30,14 +42,16 @@ def activate_current_app():
         os.system("osascript -e \"%s\" &" % ACTIVATE_CURRENT_APP)
         last_activated_pid = pid
 
-def suspend_process(pid, manual=False):
+def suspend_process(pid, manual=False, battery=False):
     name = process.get_name(pid)
+    if manual:
+        set_suspend_preference(name, SUSPEND_ON_BATTERY if battery else SUSPEND_ALWAYS)
+    if battery and not process.on_battery():
+        return
     if process.suspend_pid(pid):
         suspended_tasks.add((pid, name))
-        if manual:
-            set_suspend_preference(name, True)
     else:
-        set_suspend_preference(name, False)
+        set_suspend_preference(name, "")
 
 def resume_process(pid, manual=False):
     name = process.get_name(pid)
@@ -47,7 +61,7 @@ def resume_process(pid, manual=False):
                 if name == suspended_name:
                     suspended_tasks.remove((pid, name))
             if manual:
-                set_suspend_preference(name, False)
+                set_suspend_preference(name, "")
 
 def set_suspend_preference(name, value):
     preferences.set("suspend - %s" % name, value)

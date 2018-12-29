@@ -69,57 +69,6 @@ from webbrowser import BackgroundBrowser
 
 
 class ProcessTest(unittest.TestCase):
-    @patch.object(Popen, 'pid')
-    def test_<genexpr>(self, mock_pid):
-        mock_pid.return_value = 508
-        self.assertEqual(
-            versions.v00001.process.<genexpr>(.0=<listiterator object at 0x11805f150>),
-            32838
-        )
-
-
-    def test_<genexpr>(self):
-        self.assertIsInstance(
-            versions.v00001.process.<genexpr>(.0=<listiterator object at 0x11851e290>),
-            psutil.Process
-        )
-
-
-    @patch.object(Popen, 'pid')
-    def test_<lambda>(self, mock_pid):
-        mock_pid.return_value = 508
-        self.assertEqual(
-            versions.v00001.process.<lambda>(p=psutil.Process(pid=44148, status='terminated')),
-            0
-        )
-
-
-    @patch.object(Popen, 'pid')
-    def test_<lambda>(self, mock_pid):
-        mock_pid.return_value = 508
-        self.assertEqual(
-            versions.v00001.process.<lambda>(p=psutil.Process(pid=395, name='Electron', started='2018-11-20 00:02:24')),
-            0.0
-        )
-
-
-    @patch.object(Popen, 'pid')
-    def test_<lambda>(self, mock_pid):
-        mock_pid.return_value = 508
-        self.assertEqual(
-            versions.v00001.process.<lambda>(p=psutil.Process(pid=68073, name='Google Chrome Helper', started='2018-11-21 13:48:34')),
-            0.001130792028556235
-        )
-
-
-    @patch.object(Popen, 'pid')
-    def test_<lambda>(self, mock_pid):
-        mock_pid.return_value = 508
-        self.assertEqual(
-            versions.v00001.process.<lambda>(p=psutil.Process(pid=93, name='com.docker.vmnet', started='2018-11-20 00:01:50')),
-            -0.0
-        )
-
 
     @patch.object(Popen, 'pid')
     @patch.object(Popen, 'wrapper')

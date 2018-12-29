@@ -17,6 +17,13 @@ cpu_cache = {}
 processes = {}
 password = ""
 root_allowed = True
+dialog_open = False
+
+def on_battery():
+    return not psutil.sensors_battery().power_plugged
+
+def battery_percentage():
+    return psutil.sensors_battery().percent
 
 def clear_process_cache():
     cpu_cache.clear()
@@ -96,7 +103,10 @@ def parent_pid(pid):
     return get_process(pid).ppid()
 
 def get_total_time(pid):
-    times = get_process(pid).cpu_times() if pid != -1 else psutil.cpu_times()
+    proc = get_process(pid)
+    if not proc:
+        return 0
+    times = proc.cpu_times() if pid != -1 else psutil.cpu_times()
     return times.user + times.system + getattr(times, "children_user", 0) + getattr(times, "children_system", 0)
 
 def child_processes(pid, includeSelf=True):
@@ -207,7 +217,9 @@ def set_allow_root(allow_root):
 def execute_as_root(description, command):
     if not root_allowed:
         return False
-    global password
+    global password, dialog_open
+    if dialog_open:
+        return
     if not password:
         if not AppKit.NSThread.isMainThread():
             # Cannot show a dialogue on a background thread
@@ -220,7 +232,11 @@ def execute_as_root(description, command):
         window._textfield = AppKit.NSSecureTextField.alloc().initWithFrame_(Foundation.NSMakeRect(0, 0, 200, 25))
         window._alert.setAccessoryView_(window._textfield)
         window._alert.window().setInitialFirstResponder_(window._textfield)
-        response = window.run()
+        try:
+            dialog_open = True
+            response = window.run()
+        finally:
+            dialog_open = False
         if response.clicked:
             password = response.text
     if password:

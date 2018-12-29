@@ -35,7 +35,8 @@ TITLE_SUSPENDED_PROCESSES = "Suspended Background Tasks:"
 
 TITLE_TERMINATE = "Terminate"
 TITLE_RESUME = "Resume"
-TITLE_SUSPEND = "Suspend"
+TITLE_SUSPEND_ALWAYS = "Suspend Always"
+TITLE_SUSPEND_ON_BATTERY = "Suspend on Battery"
 TITLE_GOOGLE = "Google this..."
 TITLE_GOOGLE_SYSTEM = "Google this system process..."
 
@@ -46,7 +47,7 @@ running_local = not getattr(sys, "_MEIPASS", False)
 
 class HappyMacStatusBarApp(rumps.App):
     def __init__(self, quit_callback=None):
-        super(HappyMacStatusBarApp, self).__init__("", quit_button=None)
+        super(HappyMacStatusBarApp, self).__init__("", quit_button=None, template=True)
         self.quit_button = None
         self.quit_callback = quit_callback
         self.menu = []
@@ -73,9 +74,9 @@ class HappyMacStatusBarApp(rumps.App):
         finally:
             self.handle_action()
 
-    def suspend(self, menuItem, pid):
+    def suspend(self, menuItem, pid, battery=False):
         try:
-            suspender.suspend_process(pid, manual=True)
+            suspender.suspend_process(pid, manual=True, battery=battery)
         except:
             error.error("Error in menu callback")
         finally:
@@ -109,7 +110,8 @@ class HappyMacStatusBarApp(rumps.App):
         if resumable:
             item.add(rumps.MenuItem(TITLE_RESUME, callback=functools.partial(self.resume, pid=p.pid)))
         elif suspendable:
-            item.add(rumps.MenuItem(TITLE_SUSPEND, callback=functools.partial(self.suspend, pid=p.pid)))
+            item.add(rumps.MenuItem(TITLE_SUSPEND_ALWAYS, callback=functools.partial(self.suspend, pid=p.pid)))
+            item.add(rumps.MenuItem(TITLE_SUSPEND_ON_BATTERY, callback=functools.partial(self.suspend, pid=p.pid, battery=True)))
         item.add(rumps.MenuItem(TITLE_TERMINATE, callback=functools.partial(self.terminate, pid=p.pid)))
         return item
 
@@ -131,11 +133,9 @@ class HappyMacStatusBarApp(rumps.App):
     def menuWillOpen_(self, menu):
         self.menu_is_open = True
         self.update_skip_counter = 0
-        process.set_allow_root(False)
 
     def menuDidClose_(self, menu):
         self.menu_is_open = False
-        process.set_allow_root(True)
 
     def update_statusbar(self):
         self.icon = self.get_icon(process.get_cpu_percent())
@@ -178,7 +178,6 @@ class HappyMacStatusBarApp(rumps.App):
     def quit(self, menuItem=None):
         try:
             log.log("Quit - Ran for %d seconds" % int(time.time() - self.start))
-            process.set_allow_root(True)
             suspender.exit()
             if self.quit_callback:
                 self.quit_callback()

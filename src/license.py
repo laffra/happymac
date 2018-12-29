@@ -9,7 +9,7 @@ def get_license():
     try:
         return preferences.get("license") or download_license()
     except:
-        error.error("Cannot find license")
+        log.log("Cannot find license")
 
 def download_license():
     url = "https://www.happymac.app/_functions/agree/?token=%s" % get_hardware_uuid()

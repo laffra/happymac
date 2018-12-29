@@ -23,9 +23,9 @@ ICONS = [
     os.path.join(RESOURCE_PATH, "icons/burn.png"),
 ]
 if not os.path.exists(ICONS[0]):
-    ICONS[0] = os.path.join(RESOURCE_PATH, "icons/happy.png"),
+    ICONS[0] = os.path.join(RESOURCE_PATH, "icons/happy.png")
 if not os.path.exists(ICONS[1]):
-    ICONS[1] = os.path.join(RESOURCE_PATH, "icons/frown.png"),
+    ICONS[1] = os.path.join(RESOURCE_PATH, "icons/frown.png")
 DARK_ICONS = [
     os.path.join(RESOURCE_PATH, "icons/happy-white-transparent.png"),
     os.path.join(RESOURCE_PATH, "icons/unhappy-white-transparent.png"),
@@ -33,9 +33,12 @@ DARK_ICONS = [
     os.path.join(RESOURCE_PATH, "icons/burn.png"),
 ]
 if not os.path.exists(DARK_ICONS[0]):
-    DARK_ICONS[0] = os.path.join(RESOURCE_PATH, "icons/happy.png"),
+    print("Missing icon 0")
+    DARK_ICONS[0] = os.path.join(RESOURCE_PATH, "icons/happy.png")
+if not os.path.exists(DARK_ICONS[0]):
+    print("Still missing icon 0")
 if not os.path.exists(DARK_ICONS[1]):
-    DARK_ICONS[1] = os.path.join(RESOURCE_PATH, "icons/frown.png"),
+    DARK_ICONS[1] = os.path.join(RESOURCE_PATH, "icons/frown.png")
 
 TITLE_QUIT = "Quit HappyMac"
 TITLE_ABOUT = "About HappyMac - %s"

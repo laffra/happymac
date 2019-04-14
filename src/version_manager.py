@@ -11,7 +11,6 @@ import preferences
 import requests
 import rumps
 import sys
-import StringIO
 import tempfile
 import uuid
 import versions
@@ -114,4 +113,4 @@ def get_versions():
     return sorted(builtin_versions + downloaded_versions)
 
 if __name__ == "__main__":
-    print uuid.get_hardware_uuid()
+    print(uuid.get_hardware_uuid())

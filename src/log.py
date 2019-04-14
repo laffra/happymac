@@ -22,7 +22,7 @@ def log(message, error=None, truncate=True):
     with open(get_log_path(), "a") as output:
         output.write("    %s" % line)
         output.write("\n")
-    print line
+    print(line)
     if truncate:
         truncate_log()
 

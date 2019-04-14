@@ -111,6 +111,8 @@ class HappyMacStatusBarApp(rumps.App):
         if not p:
             return None
         name = process.get_name(p.pid)
+        if not name:
+            return None
         cpu = process.cpu(p.pid)
         percent = max(0 if resumable else 1, int(100 * cpu))
         if p.pid != utils.get_current_app_pid() and not resumable and percent < IDLE_PROCESS_PERCENT_CPU:

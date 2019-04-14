@@ -21,8 +21,14 @@ import traceback
 
 all_windows = None
 
+NO_APP = {
+   "NSApplicationName": "",
+   "NSApplicationBundleIdentifier": "",
+   "NSApplicationProcessIdentifier": -1,
+}
+
 def get_current_app():
-    return AppKit.NSWorkspace.sharedWorkspace().activeApplication()
+    return AppKit.NSWorkspace.sharedWorkspace().activeApplication() or NO_APP
 
 def get_current_app_name():
     return get_current_app()["NSApplicationName"]

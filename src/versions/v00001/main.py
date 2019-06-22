@@ -180,7 +180,6 @@ class HappyMacStatusBarApp(rumps.App):
         if not force_update:
             myCPU = process.cpu(process.getMyPid())
             if myCPU > 0.25:
-                print("Too busy, skip ")
                 return
         utils.clear_windows_cache()
         if (force_update or percent > 25) and self.menu_is_open:

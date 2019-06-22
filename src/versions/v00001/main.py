@@ -174,18 +174,26 @@ class HappyMacStatusBarApp(rumps.App):
             self.update_skip_counter -= 1
             return
         self.update_skip_counter = 8
-        process.clear_process_cache()
-        utils.clear_windows_cache()
-        self.update_statusbar()
         percent = process.get_cpu_percent()
+        process.clear_process_cache()
+        self.update_statusbar()
+        if not force_update:
+            myCPU = process.cpu(process.getMyPid())
+            print("CPU: ", percent, process.getMyPid(), myCPU)
+            if myCPU > 0.25:
+                print("Too busy, skip ")
+                return
+        utils.clear_windows_cache()
+        activity.update_activities()
+        print("render menu", force_update, percent, self.menu_is_open)
         if force_update or percent > 25 or self.menu_is_open:
             foreground_tasks = process.family(utils.get_current_app_pid())
             background_tasks = process.top(exclude=foreground_tasks)
             suspender.manage(foreground_tasks, background_tasks)
             suspended_tasks = suspender.get_suspended_tasks()
             if force_update or not self.menu_is_highlighted():
+                print("update menu")
                 self.update_menu(foreground_tasks, background_tasks, suspended_tasks, force_update)
-        suspender.activate_current_app()
 
     def menu_is_highlighted(self):
         return self.menu._menu.highlightedItem()

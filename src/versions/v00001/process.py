@@ -133,6 +133,9 @@ def family(pid):
 def family_cpu_usage(pid):
     return sum(map(cpu, [p.pid for p in family(pid)]))
 
+def getMyPid():
+    return os.getpid(
+
 def details(pid):
     p = get_process(pid)
     return "%s - %s - %s\n" % (

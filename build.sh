@@ -4,7 +4,7 @@ RED='\x1B[0;31m'
 NC='\x1B[0m'
 
 echo -e "${RED}0. Probably need a new version?${NC}"
-python src/upload.py
+python src/version.py
 
 echo -e "${RED}1. run pyinstaller - this takes 15 seconds...${NC}"
 cp app/pyinstaller.spec .

@@ -20,12 +20,20 @@ import threading
 import traceback
 
 all_windows = None
+menu_is_open = False
 
 NO_APP = {
    "NSApplicationName": "",
    "NSApplicationBundleIdentifier": "",
    "NSApplicationProcessIdentifier": -1,
 }
+
+def set_menu_open(value):
+    global menu_is_open
+    menu_is_open = value
+
+def is_menu_open():
+    return menu_is_open
 
 def get_current_app():
     return AppKit.NSWorkspace.sharedWorkspace().activeApplication() or NO_APP

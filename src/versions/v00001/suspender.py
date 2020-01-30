@@ -17,8 +17,6 @@ SUSPEND_ON_BATTERY = "battery"
 
 last_activated_pid = 0
 
-print("Battery:", process.battery_percentage())
-
 def manage(foregroundTasks, backgroundTasks):
     for task in foregroundTasks:
         if not process.is_system_process(task.pid):

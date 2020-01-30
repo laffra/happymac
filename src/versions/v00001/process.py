@@ -224,8 +224,8 @@ def execute_as_root(description, command):
     if dialog_open:
         return
     if not password:
-        if not AppKit.NSThread.isMainThread():
-            # Cannot show a dialogue on a background thread
+        if not AppKit.NSThread.isMainThread() or utils.is_menu_open():
+            # Cannot show a dialogue on a background thread or when the menu is open
             return
         window = rumps.Window(
             "Please enter your admin or root password:",

@@ -114,7 +114,7 @@ def on_ethernet():
     try:
         interface = get_line(['route', '-n', 'get', 'default'], ["interface"]).split(' ')[-1]
         device = get_line(
-            ['networksetup', 'listnetworkserviceorder'], ['ethernet(,|\s\d+,)','lan(,|\s\d+,)','ethernet adapter(,|\s\d+,)'] # MacOS likes to enumerate adapters if it has seen the same model before e.g., `Ethernet` the first time `Ethernet 1` afterwards
+            ['networksetup', 'listnetworkserviceorder'], ['ethernet(,|\s\d+,)','lan(,|\s\d+,)','ethernet adapter(,|\s\d+,)','ethernet slot\s\d+,'] # MacOS likes to enumerate adapters if it has seen the same model before e.g., `Ethernet` the first time `Ethernet 1` afterwards
         ).split(' ')[-1] 
         return interface in device
     except Exception as e:

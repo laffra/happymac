@@ -7,6 +7,7 @@ import error
 import Foundation
 import log
 import os
+import sys
 import objc
 import process
 import psutil
@@ -16,6 +17,7 @@ from Quartz import CoreGraphics
 import rumps
 import struct
 import time
+import subprocess
 import threading
 import traceback
 
@@ -108,6 +110,19 @@ def run_osa_script(script):
 def get_auto_release_pool():
     return Quartz.NSAutoreleasePool.alloc().init()
 
+def on_ethernet():
+    try:
+        interface = get_line(['route', '-n', 'get', 'default'], "interface").split(' ')[-1]
+        device = get_line(['networksetup', 'listnetworkserviceorder'], "Ethernet,").split(' ')[-1]
+        return interface in device
+    except Exception as e:
+        return False
+
+def get_line(command, substring):
+    output = subprocess.check_output(command)
+    lines = output.split('\n')
+    return filter(lambda line: substring in line, lines)[0]
+
 class OnMainThread():
     def initWithCallback_(self, callback):
         self.callback = callback
@@ -118,7 +133,11 @@ class OnMainThread():
         self.callback()
 
     def run(self):
-        self.pyobjc_performSelectorOnMainThread_withObject_("run_:", None)
+        try:
+            self.pyobjc_performSelectorOnMainThread_withObject_("run_:", None)
+        except Exception as e:
+            print(e)
+            rumps.quit_application()
 
 
 class Timer(threading.Thread):

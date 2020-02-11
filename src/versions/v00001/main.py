@@ -14,6 +14,8 @@ import time
 import utils
 import version_manager
 import webbrowser
+import psutil
+import socket
 
 RESOURCE_PATH = getattr(sys, "_MEIPASS", os.path.abspath("."))
 ICONS = [
@@ -53,6 +55,8 @@ TITLE_SUSPEND_ALWAYS = "Suspend Always"
 TITLE_SUSPEND_ON_BATTERY = "Suspend on Battery"
 TITLE_GOOGLE = "Google this..."
 TITLE_GOOGLE_SYSTEM = "Google this system process..."
+TITLE_ON_ETHERNET = "You are using Ethernet"
+TITLE_NOT_ON_ETHERNET = "You are NOT using Ethernet"
 
 LAUNCHD_PID = 1
 IDLE_PROCESS_PERCENT_CPU = 3
@@ -154,6 +158,7 @@ class HappyMacStatusBarApp(rumps.App):
                 rumps.MenuItem(TITLE_SUSPENDED_PROCESSES),
             ] + suspended_menu_items + [
                 None,
+                rumps.MenuItem(TITLE_ON_ETHERNET if utils.on_ethernet() else TITLE_NOT_ON_ETHERNET),
                 rumps.MenuItem(TITLE_QUIT, callback=self.quit),
         ])
         self.need_menu = False
@@ -220,6 +225,10 @@ class HappyMacStatusBarApp(rumps.App):
             log.log("Handled menu item %s" % menuItem)
         self.update(force_update=True)
 
+    def on_ethernet():
+        for key,item in psutil.net_if_stats().items():
+            print(key, item)
+        return True
 
 def run(quit_callback=None):
     if license.get_license():

@@ -112,16 +112,18 @@ def get_auto_release_pool():
 
 def on_ethernet():
     try:
-        interface = get_line(['route', '-n', 'get', 'default'], "interface").split(' ')[-1]
-        device = get_line(['networksetup', 'listnetworkserviceorder'], "Ethernet,").split(' ')[-1]
+        interface = get_line(['route', '-n', 'get', 'default'], ["interface"]).split(' ')[-1]
+        device = get_line(
+            ['networksetup', 'listnetworkserviceorder'], ['ethernet(,|\s\d+,)','lan(,|\s\d+,)','ethernet adapter(,|\s\d+,)','ethernet slot\s\d+,'] # MacOS likes to enumerate adapters if it has seen the same model before e.g., `Ethernet` the first time `Ethernet 1` afterwards
+        ).split(' ')[-1] 
         return interface in device
     except Exception as e:
         return False
 
-def get_line(command, substring):
+def get_line(command, regexes):
     output = subprocess.check_output(command)
     lines = output.split('\n')
-    return filter(lambda line: substring in line, lines)[0]
+    return filter(lambda line: any(re.search(regex, line) for regex in regexes), lines)[0]
 
 class OnMainThread():
     def initWithCallback_(self, callback):

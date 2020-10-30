@@ -2,6 +2,7 @@
 
 PIP=pip
 
+echo "### SETUP Dependencies"
 brew install pkg-config libffi
 export PKG_CONFIG_PATH=/usr/local/Cellar/libffi/3.2.1/lib/pkgconfig/:$PKG_CONFIG_PATH
 brew install gobject-introspection
@@ -9,6 +10,7 @@ brew install cairo
 
 sudo easy_install pip
 
+echo "### Install Python dependencies"
 $PIP install pycairo
 $PIP install pyobjc-core
 $PIP install pyobjc-framework-Quartz
@@ -16,11 +18,13 @@ $PIP install AppKit
 $PIP install py2app
 $PIP install rumps
 $PIP install psutil
+$PIP install requests
 $PIP install chardet
 
 brew install gdbm
 
 # Quartz is harder
+echo "### SETUP Quartz"
 $PIP download quartz
 gunzip quartz-0.0.1.dev0.tar.gz
 tar xvf quartz-0.0.1.dev0.tar

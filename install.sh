@@ -7,6 +7,8 @@ export PKG_CONFIG_PATH=/usr/local/Cellar/libffi/3.2.1/lib/pkgconfig/:$PKG_CONFIG
 brew install gobject-introspection
 brew install cairo
 
+sudo easy_install pip
+
 $PIP install pycairo
 $PIP install pyobjc-core
 $PIP install pyobjc-framework-Quartz

@@ -7,8 +7,13 @@
   - Stops your CPU from heating up
   - Preserves battery life
   - Makes your Mac happy again
+  
+# Installation
 
-Visit [happymac.app](https://happymac.app) for a ready to install DMG of HappyMac.
+Three ways to install HappyMac:
+  - Visit [happymac.app](https://happymac.app) for a ready to install DMG of HappyMac.
+  - Clone this repo and run from the commandline (see the bottom of this README).
+  - Use: `brew cask install happymac` (see: https://formulae.brew.sh/cask/happymac for more info).
 
 # How it works
 HappyMac is a status bar app for Mac with an icon showing in the status bar. The icon itself changes from *happy* to *unhappy* to *sweating* to *mad*, depending on the current load of your Mac. In the menu above, the machine is showing as *sweating*, as the overall CPU usage on the machine, including all available cores, is currently in between 51% and 75%.

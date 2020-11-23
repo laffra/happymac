@@ -150,12 +150,14 @@ class OnMainThread():
             rumps.quit_application()
 
 
+OnMainThreadObjCName = "OnMainThread_%d" % time.time()
+OnMainThread = type(OnMainThreadObjCName, (Foundation.NSObject,), dict(OnMainThread.__dict__))
+
+
 class Timer(threading.Thread):
     def __init__(self, interval, callback, main=True):
-        global OnMainThread
         super(Timer, self).__init__(name="Timer for %ds for %s" % (interval, callback))
         if main:
-            OnMainThread = type('OnMainThread', (Foundation.NSObject,), dict(OnMainThread.__dict__))
             self.callback = OnMainThread.alloc().initWithCallback_(callback)
         else:
             self.callback = callback

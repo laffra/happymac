@@ -77,7 +77,7 @@ class HappyMacStatusBarApp(rumps.App):
         self.last_menu_item = None
         self.last_highlight_change = time.time()
         utils.set_menu_open(False)
-        utils.Timer(1.0, self.update).start()
+        utils.Timer(1.0, self.main_update).start()
         utils.Timer(10.0, process.cache_processes, False).start()
         process.cache_processes()
         log.log("Started HappyMac %s" % version_manager.last_version())
@@ -194,7 +194,7 @@ class HappyMacStatusBarApp(rumps.App):
         if self.icon is not icon:
             self.icon = icon
 
-    def update(self, force_update=False):
+    def main_update(self, force_update=False):
         try:
             menu_item = self.menu._menu.highlightedItem()
             if self.last_menu_item is not menu_item:
@@ -239,7 +239,7 @@ class HappyMacStatusBarApp(rumps.App):
         return
         if menuItem:
             log.log("Handled menu item %s" % menuItem)
-        self.update(force_update=True)
+        self.main_update(force_update=True)
 
 
 def run(quit_callback=None):

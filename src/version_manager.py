@@ -12,6 +12,7 @@ import requests
 import rumps
 import sys
 import tempfile
+import traceback
 import uuid
 import versions
 
@@ -27,18 +28,21 @@ if not os.path.exists(downloads_dir):
 
 sys.path.append(home_dir)
 running_local = not getattr(sys, "_MEIPASS", False)
+testing = False
 
 
 def main(quit_callback=None):
-    if not running_local:
+    if testing or not running_local:
         download_latest()
     try:
         load_version(last_version(), quit_callback)
     except Exception as e:
         log.log("ERROR: Could not load version due to %s. Loading built-in v00001" % e)
+        log.log(traceback.format_exc())
         load_version("v00001", quit_callback)
 
 def load_version(version, quit_callback=None):
+    log.log("Load version %s" % version)
     try:
         mod = find_version(version)
     except Exception as e:
@@ -74,7 +78,8 @@ def load_module_from_source(module_name, source):
     with open(temporary_path, "w") as fout:
         fout.write(source)
     mod =  imp.load_source(module_name, temporary_path)
-    os.remove(temporary_path)
+    if not testing:
+        os.remove(temporary_path)
     return mod
 
 def download_latest():
@@ -101,7 +106,7 @@ def save_contents(latest):
     log.log("Download: available versions: %s" % get_versions())
 
 def last_version():
-    if running_local:
+    if not testing and running_local:
         return "v00001"
     return sorted(get_versions())[-1]
 
@@ -113,4 +118,5 @@ def get_versions():
     return sorted(builtin_versions + downloaded_versions)
 
 if __name__ == "__main__":
-    print(uuid.get_hardware_uuid())
+    testing = True
+    main()

@@ -35,6 +35,8 @@ def manage(foregroundTasks, backgroundTasks):
 
 def activate_current_app():
     global last_activated_pid
+    if not utils.get_current_app():
+        return
     pid = utils.get_current_app_pid()
     if pid != -1 and pid != last_activated_pid:
         os.system("osascript -e \"%s\" &" % ACTIVATE_CURRENT_APP)

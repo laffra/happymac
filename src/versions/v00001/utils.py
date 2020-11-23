@@ -151,22 +151,29 @@ class OnMainThread():
 
 
 class Timer(threading.Thread):
-    def __init__(self, interval, callback):
+    def __init__(self, interval, callback, main=True):
         global OnMainThread
         super(Timer, self).__init__(name="Timer for %ds for %s" % (interval, callback))
-        OnMainThread = type('OnMainThread', (Foundation.NSObject,), dict(OnMainThread.__dict__))
-        self.callback = OnMainThread.alloc().initWithCallback_(callback)
+        if main:
+            OnMainThread = type('OnMainThread', (Foundation.NSObject,), dict(OnMainThread.__dict__))
+            self.callback = OnMainThread.alloc().initWithCallback_(callback)
+        else:
+            self.callback = callback
+            self.name = callback.__name__
         self.interval = interval
 
     def run(self):
         while True:
             time.sleep(self.interval)
             try:
-                self.callback.run()
+                if hasattr(self.callback, "run"):
+                    self.callback.run()
+                else:
+                    self.callback()
             except psutil.NoSuchProcess:
                 pass # this is normal
             except Exception as e:
-                error.error("Error in Timer callback '%s': %s" % (self.callback.callback.im_func.__name__, e))
+                error.error("Error in Timer callback '%s': %s" % (self.name, e))
 
 image_cache = {}
 rumps_nsimage_from_file = rumps.rumps._nsimage_from_file

@@ -60,6 +60,7 @@ TITLE_NOT_ON_ETHERNET = "You are NOT using Ethernet"
 
 LAUNCHD_PID = 1
 IDLE_PROCESS_PERCENT_CPU = 3
+MENU_HIGHLIGHT_REDRAW_DELAY = 5
 
 running_local = not getattr(sys, "_MEIPASS", False)
 
@@ -73,8 +74,12 @@ class HappyMacStatusBarApp(rumps.App):
         self.menu._menu.setDelegate_(self)
         self.start = time.time()
         self.need_menu = False
+        self.last_menu_item = None
+        self.last_highlight_change = time.time()
         utils.set_menu_open(False)
         utils.Timer(1.0, self.update).start()
+        utils.Timer(10.0, process.cache_processes, False).start()
+        process.cache_processes()
         log.log("Started HappyMac %s" % version_manager.last_version())
 
     def terminate(self, menuItem, pid):
@@ -137,8 +142,7 @@ class HappyMacStatusBarApp(rumps.App):
 
     def create_menu(self):
         self.icon = DARK_ICONS[0] if utils.dark_mode() else ICONS[0]
-        foreground_tasks = process.family(utils.get_current_app_pid())
-        background_tasks = process.top(exclude=foreground_tasks)
+        foreground_tasks, background_tasks = process.get_processes() 
         suspender.manage(foreground_tasks, background_tasks)
         suspended_tasks = suspender.get_suspended_tasks()
         foreground_menu_items = filter(None, map(self.menu_item_for_process, foreground_tasks))
@@ -161,11 +165,12 @@ class HappyMacStatusBarApp(rumps.App):
                 rumps.MenuItem(TITLE_ON_ETHERNET if utils.on_ethernet() else TITLE_NOT_ON_ETHERNET),
                 rumps.MenuItem(TITLE_QUIT, callback=self.quit),
         ])
-        self.need_menu = False
+
 
     def menuWillOpen_(self, menu):
         utils.set_menu_open(True)
         self.need_menu = True
+        self.create_menu()
 
     def clean_menu(self):
         for key, menu_item in self.menu.items():
@@ -181,21 +186,32 @@ class HappyMacStatusBarApp(rumps.App):
 
     def menuDidClose_(self, menu):
         utils.set_menu_open(False)
+        self.need_menu = False
         self.loading()
 
     def update_statusbar(self):
-        self.icon = self.get_icon(process.get_cpu_percent())
+        icon = self.get_icon(process.get_cpu_percent())
+        if self.icon is not icon:
+            self.icon = icon
 
     def update(self, force_update=False):
-        process.clear_process_cache()
-        self.update_statusbar()
-        if not force_update:
-            myCPU = process.cpu(process.getMyPid())
-            if myCPU > 0.25:
-                return
-        utils.clear_windows_cache()
-        if self.need_menu:
-            self.create_menu()
+        try:
+            menu_item = self.menu._menu.highlightedItem()
+            if self.last_menu_item is not menu_item:
+                self.last_highlight_change = time.time()
+            self.last_menu_item = menu_item
+            process.update()
+            self.update_statusbar()
+            if not force_update:
+                myCPU = process.cpu(process.getMyPid())
+                if myCPU > 0.25:
+                    return
+            utils.clear_windows_cache()
+            if self.need_menu:
+                if time.time() - self.last_highlight_change > MENU_HIGHLIGHT_REDRAW_DELAY:
+                    self.create_menu()
+        except Exception as e:
+            error.error("Could not update menu: %s" % e)
 
     def menu_is_highlighted(self):
         return self.menu._menu.highlightedItem()
@@ -225,10 +241,6 @@ class HappyMacStatusBarApp(rumps.App):
             log.log("Handled menu item %s" % menuItem)
         self.update(force_update=True)
 
-    def on_ethernet():
-        for key,item in psutil.net_if_stats().items():
-            print(key, item)
-        return True
 
 def run(quit_callback=None):
     if license.get_license():

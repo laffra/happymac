@@ -18,12 +18,15 @@ processes = {}
 password = ""
 root_allowed = True
 dialog_open = False
+cached_processes = []
+BACKGROUND_PROCESS_COUNT = 5
+
 
 def on_battery():
-    return not psutil.sensors_battery().power_plugged
+    return psutil.sensors_battery() and not psutil.sensors_battery().power_plugged
 
 def battery_percentage():
-    return psutil.sensors_battery().percent
+    return psutil.sensors_battery().percent if psutil.sensors_battery() else 100
 
 def clear_process_cache():
     cpu_cache.clear()
@@ -144,9 +147,15 @@ def details(pid):
         p.open_files()
     )
 
-def top(exclude, count=5):
+def get_processes():
+    return cached_processes
+
+def cache_processes():
+    global cached_processes
+    foreground_tasks = family(utils.get_current_app_pid())
     my_pid = os.getpid()
-    exclude_pids = set(p.pid for p in exclude)
+    exclude_pids = set(p.pid for p in foreground_tasks)
+
     def create_process(pid):
         try:
             name = get_name(pid)
@@ -157,7 +166,10 @@ def top(exclude, count=5):
             return None
 
     processes = filter(None, (create_process(pid) for pid in psutil.pids()))
-    return list(reversed(sorted(processes, key=lambda p: -cpu(p.pid))[:count]))
+    cached_processes = [
+        foreground_tasks,
+        list(reversed(sorted(processes, key=lambda p: -cpu(p.pid))[:BACKGROUND_PROCESS_COUNT]))
+    ]
 
 def location(pid):
     p = get_process(pid)
@@ -251,3 +263,6 @@ def resume_all():
     for pid in processes.keys():
         if not resume_pid(pid):
             set_allow_root(False)
+
+def update():
+    clear_process_cache()

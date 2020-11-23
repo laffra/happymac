@@ -57,6 +57,7 @@ for name in names:
                 continue
             contents = contents.replace("def %s(" % func_name, "def %s_%s(" % (shorten(name), shorten(func_name)))
             contents = contents.replace("%s.%s(" % (name, func_name), "%s_%s(" % (shorten(name), shorten(func_name)))
+            contents = contents.replace("%s.%s," % (name, func_name), "%s_%s," % (shorten(name), shorten(func_name)))
         elif name == "utils" and inspect.isclass(item):
             class_name = item.__name__
             if class_name == "Timer":
